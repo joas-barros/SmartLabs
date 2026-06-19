@@ -1,5 +1,7 @@
-public class Lab2Coap {
-    public static void run() {
+import coap.CoapOrchestrator;
 
+public class Lab2Coap {
+    static void main(String[] args) {
+        CoapOrchestrator.run();
     }
 }
