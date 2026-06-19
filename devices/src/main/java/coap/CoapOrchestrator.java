@@ -42,7 +42,6 @@ public class CoapOrchestrator {
         for (int i = 1; i <= Config.PCS_PER_LAB; i++) {
             String pcId = "PC" + String.format("%02d", i);
 
-            // Regras de Borda (Gateway local para o PC via CoAP)
             Consumer<PCDTO> edgeProcessorPC = dto -> {
                 // 1. Envia telemetria normal (equivalente a QoS 0, mensagem NON)
                 coap.publish(Config.pcCoapResource(pcId), dto);
@@ -64,7 +63,6 @@ public class CoapOrchestrator {
             scheduler.scheduleAtFixedRate(pc, jitter(), Config.PC_INTERVAL_SEC * 1000L, TimeUnit.MILLISECONDS);
         }
 
-        // Regras de Borda (Gateway local para o Ar-Condicionado via CoAP)
         Consumer<AirConditioningDTO> edgeProcessorAC = dto -> {
             coap.publish(Config.acCoapResource(), dto);
 
