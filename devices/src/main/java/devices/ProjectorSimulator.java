@@ -65,9 +65,12 @@ public class ProjectorSimulator implements Runnable{
             data.setPowerConsumptionInWatts(250 + random.nextDouble() * 50);
 
         } else {
-            isOn = false;
-            timeUsedMinutes = Math.max(0, timeUsedMinutes - 5); // decrementa 5 minutos a cada ciclo, mas não vai abaixo de 0
-            internalTemperature -= 0.3 + random.nextDouble() * 0.3; // diminui a temperatura interna
+            double temperatureAmbient = 26;
+            internalTemperature += (temperatureAmbient - internalTemperature) * 0.15;
+
+            data.setIsOn(false);
+            data.setActiveVideoInput("NENHUMA");
+            data.setPowerConsumptionInWatts(0.5); // standby
         }
     }
 
