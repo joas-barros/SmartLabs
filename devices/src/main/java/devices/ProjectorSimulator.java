@@ -9,13 +9,14 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class ProjectorSimulator implements Runnable{
+public class ProjectorSimulator implements Runnable {
 
     private static final List<String> VIDEO_INPUTS = List.of("HDMI1", "HDMI2", "VGA", "WIRELESS");
 
     private final String labId;
     private final String projetorId;
     private final Consumer<ProjectorDTO> publisher;
+    private final ScenarioManager scenarioManager; // Injeção
 
     private boolean isOn;
     private long timeUsedMinutes;
@@ -23,9 +24,11 @@ public class ProjectorSimulator implements Runnable{
 
     private final Random random = ThreadLocalRandom.current();
 
-    public ProjectorSimulator(String labId, String projetorId, Consumer<ProjectorDTO> publisher) {
+    // Construtor atualizado
+    public ProjectorSimulator(String labId, String projetorId, ScenarioManager scenarioManager, Consumer<ProjectorDTO> publisher) {
         this.labId = labId;
         this.projetorId = projetorId;
+        this.scenarioManager = scenarioManager;
         this.publisher = publisher;
 
         this.isOn = false;
@@ -36,7 +39,7 @@ public class ProjectorSimulator implements Runnable{
     @Override
     public void run() {
         try {
-            ScenarioType scenario = ScenarioManager.getCurrentScenario();
+            ScenarioType scenario = scenarioManager.getCurrentScenario(); // Uso da instância
             ProjectorDTO data = new ProjectorDTO(labId, projetorId);
 
             switch (scenario) {

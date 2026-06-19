@@ -9,30 +9,32 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class ACSimulator implements Runnable{
+public class ACSimulator implements Runnable {
     private final String labId;
     private final String acId;
     private final Consumer<AirConditioningDTO> publisher;
+    private final ScenarioManager scenarioManager; // Injeção
 
     private double environmentTemperature;
     private boolean isOn;
 
     private final Random random = ThreadLocalRandom.current();
 
-    public ACSimulator(String labId, String acId, Consumer<AirConditioningDTO> publisher) {
+    // Construtor atualizado
+    public ACSimulator(String labId, String acId, ScenarioManager scenarioManager, Consumer<AirConditioningDTO> publisher) {
         this.labId = labId;
         this.acId = acId;
+        this.scenarioManager = scenarioManager;
         this.publisher = publisher;
 
-        this.environmentTemperature = 22 + random.nextDouble() * 3; // ambiente refrigerado
+        this.environmentTemperature = 22 + random.nextDouble() * 3;
         this.isOn = true;
     }
-
 
     @Override
     public void run() {
         try {
-            ScenarioType scenario = ScenarioManager.getCurrentScenario();
+            ScenarioType scenario = scenarioManager.getCurrentScenario(); // Uso da instância
 
             AirConditioningDTO data = new AirConditioningDTO(labId, acId);
             switch (scenario) {
@@ -51,9 +53,7 @@ public class ACSimulator implements Runnable{
 
     private void setNormalOperation(AirConditioningDTO data) {
         isOn = true;
-
         Double target = 22 + random.nextDouble() * 2;
-
         environmentTemperature += (target - environmentTemperature) * 0.3 + (random.nextDouble() - 0.5) * 0.3;
 
         data.setIsOn(true);
@@ -63,9 +63,7 @@ public class ACSimulator implements Runnable{
 
     private void setIntenseOperation(AirConditioningDTO data) {
         isOn = true;
-
         Double target = 21 + random.nextDouble() * 1.5;
-
         environmentTemperature += (target - environmentTemperature) * 0.25 + (random.nextDouble() - 0.5) * 0.4;
 
         data.setIsOn(true);

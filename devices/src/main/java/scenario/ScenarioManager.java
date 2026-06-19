@@ -2,18 +2,18 @@ package scenario;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class ScenarioManager {
-    private static final AtomicReference<ScenarioType> currentScenario =
+public class ScenarioManager {
+    private final AtomicReference<ScenarioType> currentScenario =
             new AtomicReference<>(ScenarioType.NORMAL_USE);
 
-    private ScenarioManager() {
+    public ScenarioManager() {
     }
 
-    public static ScenarioType getCurrentScenario() {
+    public ScenarioType getCurrentScenario() {
         return currentScenario.get();
     }
 
-    public static void setCurrentScenario(ScenarioType newScenario) {
+    public void setCurrentScenario(ScenarioType newScenario) {
         ScenarioType previous = currentScenario.getAndSet(newScenario);
         System.out.printf("[SCENARIO] Alterado %s para %s%n", previous, newScenario);
     }

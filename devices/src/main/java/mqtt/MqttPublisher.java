@@ -33,6 +33,7 @@ public class MqttPublisher implements AutoCloseable {
             MqttMessage message = new MqttMessage(json);
             message.setQos(0);
             client.publish(topic, message);
+            System.out.println("[MQTT] Publicado messagem " + message + " em " + topic);
         } catch (Exception e) {
             System.err.printf("[MQTT] Falha ao publicar em %s: %s%n", topic, e.getMessage());
         }
@@ -47,6 +48,7 @@ public class MqttPublisher implements AutoCloseable {
             MqttMessage message = new MqttMessage(json);
             message.setQos(1);
             client.publish(topic, message);
+            System.out.println("[MQTT] Publicado alerta " + message + " em " + topic);
         } catch (Exception e) {
             System.err.printf("[MQTT] Falha ao publicar em %s: %s%n", topic, e.getMessage());
         }

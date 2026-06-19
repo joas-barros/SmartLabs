@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class PCSimulator implements Runnable{
+public class PCSimulator implements Runnable {
 
     private static final List<String> NORMAL_APLICATIONS = List.of(
             "vscode", "browser", "terminal", "libreoffice", "files", "intellij-idea"
@@ -27,20 +27,21 @@ public class PCSimulator implements Runnable{
     private final String labId;
     private final String pcId;
     private final Consumer<PCDTO> publisher;
+    private final ScenarioManager scenarioManager; // Recebido via injeção de dependência
 
-    // Estado interno mantido entre os ciclos para gerar variação suave (random walk)
     private double currentCpu;
     private double currentRam;
     private double currentTemperature;
 
     private final Random random = ThreadLocalRandom.current();
 
-    public PCSimulator(String labId, String pcId, Consumer<PCDTO> publisher) {
+    // Construtor atualizado
+    public PCSimulator(String labId, String pcId, ScenarioManager scenarioManager, Consumer<PCDTO> publisher) {
         this.labId = labId;
         this.pcId = pcId;
+        this.scenarioManager = scenarioManager;
         this.publisher = publisher;
 
-        // Estado inicial em repouso
         this.currentCpu = 5 + random.nextDouble() * 10;
         this.currentRam = 20 + random.nextDouble() * 10;
         this.currentTemperature = 35 + random.nextDouble() * 5;
@@ -49,7 +50,8 @@ public class PCSimulator implements Runnable{
     @Override
     public void run() {
         try {
-            ScenarioType cenario = ScenarioManager.getCurrentScenario();
+            // Agora consulta a instância, e não a classe estática
+            ScenarioType cenario = scenarioManager.getCurrentScenario();
             PCDTO data = new PCDTO(labId, pcId);
 
             switch (cenario) {
@@ -82,15 +84,12 @@ public class PCSimulator implements Runnable{
         adjustTemperaturePerCpu(45, 0.4);
 
         data.setStatus(active ? PCState.ACTIVE : PCState.IDLE);
-
         data.setApplicationInUse(choose(NORMAL_APLICATIONS));
-
         data.setNetworkUsageInMbps(active ? (1 + random.nextDouble() * 5) : (0.1 + random.nextDouble() * 0.5));
         data.setSecurityEventDetected(false);
     }
 
     private void generatePeakUsage(PCDTO data) {
-        // Todos os PCs em uso simultâneo, CPU e RAM elevadas e estáveis
         double targetCpu = 70 + random.nextDouble() * 25;
         double targetRam = 60 + random.nextDouble() * 30;
 
@@ -111,7 +110,6 @@ public class PCSimulator implements Runnable{
 
         moveInDirection(targetCpu, targetRam, 1.0);
 
-        // Temperatura sobe progressivamente até um teto alto, simulando ambiente sem refrigeração
         double ceilTemperature = 75 + (currentCpu * 0.3);
         if (currentTemperature < ceilTemperature) {
             currentTemperature += 0.8 + random.nextDouble() * 0.7;
@@ -124,7 +122,6 @@ public class PCSimulator implements Runnable{
     }
 
     private void generateOverload(PCDTO data) {
-        // CPU saturada em quase todos os PCs, rede saturada
         double targetCpu = 90 + random.nextDouble() * 10;
         double targetRam = 80 + random.nextDouble() * 18;
 
@@ -159,13 +156,6 @@ public class PCSimulator implements Runnable{
     }
 
     // ───────────────────────────── Helpers ─────────────────────────────
-
-    /**
-     * Move CPU e RAM gradualmente em direção a um valor-alvo (random walk suavizado),
-     * evitando saltos abruptos e tornando a simulação mais realista.
-     *
-     * @param fatorVariacao controla a velocidade da transição e o ruído aplicado
-     */
     private void moveInDirection(double targetCpu, double targetRam, double factor) {
         double cpuStep = (targetCpu - currentCpu) * 0.3 + (random.nextDouble() - 0.5) * factor * 3;
         double ramStep = (targetRam - currentRam) * 0.2 + (random.nextDouble() - 0.5) * factor * 2;
@@ -174,10 +164,6 @@ public class PCSimulator implements Runnable{
         currentRam = clamp(currentRam + ramStep, 0, 100);
     }
 
-    /**
-     * Ajusta a temperatura do processador correlacionando-a com a CPU atual,
-     * simulando o efeito "CPU alta + temperatura alta".
-     */
     private void adjustTemperaturePerCpu(double ceilBase, double noise) {
         double ceilTemperature = ceilBase + (currentCpu * 0.35);
         double step = (ceilTemperature - currentTemperature) * 0.25 + (random.nextDouble() - 0.5) * noise;
