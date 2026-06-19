@@ -1,7 +1,6 @@
 package devices;
 
-import model.PCDTO;
-import model.PCState;
+import model.ProjectorDTO;
 import scenario.ScenarioManager;
 import scenario.ScenarioType;
 
@@ -12,187 +11,67 @@ import java.util.function.Consumer;
 
 public class ProjectorSimulator implements Runnable{
 
-    private static final List<String> NORMAL_APLICATIONS = List.of(
-            "vscode", "browser", "terminal", "libreoffice", "files", "intellij-idea"
-    );
-
-    private static final List<String> TEST_APLICATIONS = List.of(
-            "test_enviroment", "blocked_browser", "visual_studio", "sigaa"
-    );
-
-    private static final List<String> NON_AUTHORIZED_SOFTWARES = List.of(
-            "cripto-miner", "steam", "netflix", "p2p-sharing", "unauthorized-vpn"
-    );
+    private static final List<String> VIDEO_INPUTS = List.of("HDMI1", "HDMI2", "VGA", "WIRELESS");
 
     private final String labId;
-    private final String pcId;
-    private final Consumer<PCDTO> publisher;
+    private final String projetorId;
+    private final Consumer<ProjectorDTO> publisher;
 
-    // Estado interno mantido entre os ciclos para gerar variação suave (random walk)
-    private double currentCpu;
-    private double currentRam;
-    private double currentTemperature;
+    private boolean isOn;
+    private long timeUsedMinutes;
+    private double internalTemperature;
 
     private final Random random = ThreadLocalRandom.current();
 
-    public ProjectorSimulator(String labId, String pcId, Consumer<PCDTO> publisher) {
+    public ProjectorSimulator(String labId, String projetorId, Consumer<ProjectorDTO> publisher) {
         this.labId = labId;
-        this.pcId = pcId;
+        this.projetorId = projetorId;
         this.publisher = publisher;
 
-        // Estado inicial em repouso
-        this.currentCpu = 5 + random.nextDouble() * 10;
-        this.currentRam = 20 + random.nextDouble() * 10;
-        this.currentTemperature = 35 + random.nextDouble() * 5;
+        this.isOn = false;
+        this.timeUsedMinutes = 0;
+        this.internalTemperature = 28 + random.nextDouble() * 4;
     }
 
     @Override
     public void run() {
         try {
-            ScenarioType cenario = ScenarioManager.getCurrentScenario();
-            PCDTO data = new PCDTO(labId, pcId);
+            ScenarioType scenario = ScenarioManager.getCurrentScenario();
+            ProjectorDTO data = new ProjectorDTO(labId, projetorId);
 
-            switch (cenario) {
-                case NORMAL_USE -> generateNormalUsage(data);
-                case PEAK_USE -> generatePeakUsage(data);
-                case INFRASTRUCTURE_FAILURE -> generateInfrastructureFailure(data);
-                case OVERLOAD -> generateOverload(data);
-                case ANOMALOUS_BEHAVIOR -> generateAnomalousBehavior(data);
+            switch (scenario) {
+                case PEAK_USE -> generateOperationInClass(data, true);
+                case NORMAL_USE -> generateOperationInClass(data, random.nextDouble() < 0.4);
+                default -> generateOperationInClass(data, isOn); // mantém estado anterior
             }
 
-            data.setCpu(round(currentCpu));
-            data.setRam(round(currentRam));
-            data.setTemperature(round(currentTemperature));
-
+            data.setInternalTemperature(round(internalTemperature));
+            data.setUsageTimeInMinutes(timeUsedMinutes);
             publisher.accept(data);
 
         } catch (Exception e) {
-            System.err.printf("[%s-%s] Erro ao gerar dados: %s%n", labId, pcId, e.getMessage());
+            System.err.printf("[%s-%s] Erro ao gerar dados: %s%n", labId, projetorId, e.getMessage());
         }
     }
 
-    // ───────────────────────────── Scenarios ─────────────────────────────
-    private void generateNormalUsage(PCDTO data) {
-        boolean active = random.nextDouble() < 0.6;
+    private void generateOperationInClass(ProjectorDTO data, boolean shouldBeOn) {
+        if (shouldBeOn) {
+            timeUsedMinutes++;
+            double ceilTemperature = 55 + random.nextDouble() * 5;
+            internalTemperature += (ceilTemperature - internalTemperature) * 0.2 + (random.nextDouble() - 0.5) * 0.5;
 
-        double targetCpu = active ? (20 + random.nextDouble() * 30) : (3 + random.nextDouble() * 8);
-        double targetRam = active ? (30 + random.nextDouble() * 25) : (10 + random.nextDouble() * 15);
+            data.setIsOn(true);
+            data.setActiveVideoInput(VIDEO_INPUTS.get(random.nextInt(VIDEO_INPUTS.size())));
+            data.setPowerConsumptionInWatts(250 + random.nextDouble() * 50);
 
-        moveInDirection(targetCpu, targetRam, 1.0);
-        adjustTemperaturePerCpu(45, 0.4);
-
-        data.setStatus(active ? PCState.ACTIVE : PCState.IDLE);
-
-        data.setApplicationInUse(choose(NORMAL_APLICATIONS));
-
-        data.setNetworkUsageInMbps(active ? (1 + random.nextDouble() * 5) : (0.1 + random.nextDouble() * 0.5));
-        data.setSecurityEventDetected(false);
-    }
-
-    private void generatePeakUsage(PCDTO data) {
-        // Todos os PCs em uso simultâneo, CPU e RAM elevadas e estáveis
-        double targetCpu = 70 + random.nextDouble() * 25;
-        double targetRam = 60 + random.nextDouble() * 30;
-
-        moveInDirection(targetCpu, targetRam, 1.5);
-        adjustTemperaturePerCpu(55, 0.6);
-
-        data.setStatus(PCState.IN_TEST);
-        data.setApplicationInUse(choose(TEST_APLICATIONS));
-        data.setNetworkUsageInMbps(5 + random.nextDouble() * 10);
-        data.setSecurityEventDetected(false);
-    }
-
-    private void generateInfrastructureFailure(PCDTO data) {
-        boolean active = random.nextDouble() < 0.6;
-
-        double targetCpu = active ? (20 + random.nextDouble() * 30) : (3 + random.nextDouble() * 8);
-        double targetRam = active ? (30 + random.nextDouble() * 25) : (15 + random.nextDouble() * 10);
-
-        moveInDirection(targetCpu, targetRam, 1.0);
-
-        // Temperatura sobe progressivamente até um teto alto, simulando ambiente sem refrigeração
-        double ceilTemperature = 75 + (currentCpu * 0.3);
-        if (currentTemperature < ceilTemperature) {
-            currentTemperature += 0.8 + random.nextDouble() * 0.7;
-        }
-
-        data.setStatus(active ? PCState.ACTIVE : PCState.IDLE);
-        data.setApplicationInUse(choose(NORMAL_APLICATIONS));
-        data.setNetworkUsageInMbps(active ? (1 + random.nextDouble() * 5) : (0.1 + random.nextDouble() * 0.5));
-        data.setSecurityEventDetected(false);
-    }
-
-    private void generateOverload(PCDTO data) {
-        // CPU saturada em quase todos os PCs, rede saturada
-        double targetCpu = 90 + random.nextDouble() * 10;
-        double targetRam = 80 + random.nextDouble() * 18;
-
-        moveInDirection(targetCpu, targetRam, 2.0);
-        adjustTemperaturePerCpu(65, 0.8);
-
-        data.setStatus(PCState.ACTIVE);
-        data.setApplicationInUse(choose(NORMAL_APLICATIONS));
-        data.setNetworkUsageInMbps(15 + random.nextDouble() * 20);
-        data.setSecurityEventDetected(false);
-    }
-
-    private void generateAnomalousBehavior(PCDTO data) {
-        boolean anomalous = random.nextDouble() < 0.2;
-
-        if (anomalous) {
-            double targetCpu = 80 + random.nextDouble() * 15;
-            double targetRam = 70 + random.nextDouble() * 20;
-
-            moveInDirection(targetCpu, targetRam, 1.8);
-            adjustTemperaturePerCpu(60, 0.7);
-
-            data.setStatus(PCState.ACTIVE);
-            data.setApplicationInUse(choose(NON_AUTHORIZED_SOFTWARES));
-            data.setNetworkUsageInMbps(10 + random.nextDouble() * 20);
-            data.setSecurityEventDetected(true);
-            data.setSecurityEventDescription("Execução de software não autorizado: "
-                    + data.getApplicationInUse());
         } else {
-            generateNormalUsage(data);
+            isOn = false;
+            timeUsedMinutes = Math.max(0, timeUsedMinutes - 5); // decrementa 5 minutos a cada ciclo, mas não vai abaixo de 0
+            internalTemperature -= 0.3 + random.nextDouble() * 0.3; // diminui a temperatura interna
         }
-    }
-
-    // ───────────────────────────── Helpers ─────────────────────────────
-
-    /**
-     * Move CPU e RAM gradualmente em direção a um valor-alvo (random walk suavizado),
-     * evitando saltos abruptos e tornando a simulação mais realista.
-     *
-     * @param fatorVariacao controla a velocidade da transição e o ruído aplicado
-     */
-    private void moveInDirection(double targetCpu, double targetRam, double factor) {
-        double cpuStep = (targetCpu - currentCpu) * 0.3 + (random.nextDouble() - 0.5) * factor * 3;
-        double ramStep = (targetRam - currentRam) * 0.2 + (random.nextDouble() - 0.5) * factor * 2;
-
-        currentCpu = clamp(currentCpu + cpuStep, 0, 100);
-        currentRam = clamp(currentRam + ramStep, 0, 100);
-    }
-
-    /**
-     * Ajusta a temperatura do processador correlacionando-a com a CPU atual,
-     * simulando o efeito "CPU alta + temperatura alta".
-     */
-    private void adjustTemperaturePerCpu(double ceilBase, double noise) {
-        double ceilTemperature = ceilBase + (currentCpu * 0.35);
-        double step = (ceilTemperature - currentTemperature) * 0.25 + (random.nextDouble() - 0.5) * noise;
-        currentTemperature = clamp(currentTemperature + step, 25, 100);
-    }
-
-    private double clamp(double valor, double min, double max) {
-        return Math.max(min, Math.min(max, valor));
     }
 
     private double round(double valor) {
         return Math.round(valor * 10) / 10.0;
-    }
-
-    private String choose(List<String> opcoes) {
-        return opcoes.get(random.nextInt(opcoes.size()));
     }
 }
