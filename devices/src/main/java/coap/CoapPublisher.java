@@ -8,7 +8,8 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 
 public class CoapPublisher {
     private final String baseUri;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     public CoapPublisher(String baseUri) {
         this.baseUri = baseUri;

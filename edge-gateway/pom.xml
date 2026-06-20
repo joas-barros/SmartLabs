@@ -3,10 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>br.ufersa.iot</groupId>
+        <artifactId>smartlabs-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
 
-    <groupId>br.ufersa.iot</groupId>
-    <artifactId>devices</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>edge-gateway</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -15,6 +18,13 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>br.ufersa.iot</groupId>
+            <artifactId>devices</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

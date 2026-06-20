@@ -90,15 +90,6 @@ public class MqttOrchestrator {
 
             Consumer<PCDTO> mqttConsumer = dto -> {
                 mqtt.publish(Config.pcTopic(Config.LAB1, pcId), dto);
-
-                if (dto.getTemperature() > 85.0 || dto.getCpu() > 95.0) {
-                    String alertJson = String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"SUPERAQUECIMENTO\"}", dto.getLab(), dto.getId());
-                    mqtt.publishAlert(Config.alertTopic(Config.LAB1), alertJson);
-                }
-                if (Boolean.TRUE.equals(dto.getSecurityEventDetected())) {
-                    String alertJson = String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"SEGURANÇA\"}", dto.getLab(), dto.getId());
-                    mqtt.publishAlert(Config.alertTopic(Config.LAB1), alertJson);
-                }
             };
 
             PCSimulator pc = new PCSimulator(Config.LAB1, pcId, sm, mqttConsumer);
@@ -109,10 +100,6 @@ public class MqttOrchestrator {
         // Inicializa o Ar-Condicionado do LAB 1
         Consumer<AirConditioningDTO> acConsumer = dto -> {
             mqtt.publish(Config.acTopic(Config.LAB1), dto);
-            if (!dto.getIsOn() && dto.getEnvironmentTemperature() > 30.0) {
-                String alertJson = String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"FALHA_INFRAESTRUTURA\"}", dto.getLab(), dto.getId());
-                mqtt.publishAlert(Config.alertTopic(Config.LAB1), alertJson);
-            }
         };
         ACSimulator ac = new ACSimulator(Config.LAB1, "AC01", sm, acConsumer);
         scheduler.scheduleAtFixedRate(ac, jitter(), Config.AIR_CONDITIONING_INTERVAL_SEC, TimeUnit.SECONDS);
