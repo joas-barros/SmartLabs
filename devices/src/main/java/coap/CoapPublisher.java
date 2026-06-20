@@ -27,6 +27,8 @@ public class CoapPublisher {
                     && response.getCode() != CoAP.ResponseCode.CREATED) {
                 System.err.printf("[CoAP] Resposta inesperada de %s: %s%n",
                         resource, response != null ? response.getCode() : "sem resposta");
+            } else {
+                System.out.printf("[CoAP] Publicado payload %s com sucesso em %s%n", payload, resource);
             }
         } catch (Exception e) {
             System.err.printf("[CoAP] Falha ao publicar em %s: %s%n", resource, e.getMessage());

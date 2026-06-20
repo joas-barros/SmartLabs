@@ -119,4 +119,28 @@ public class PCDTO {
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
+
+    @Override
+    public String toString() {
+        String securityAlert = (securityEventDetected != null && securityEventDetected)
+                ? "⚠️ ALERTA: " + securityEventDescription
+                : "✅ Seguro";
+
+        return String.format(
+                """
+                
+                [COMPUTADOR] %s @ %s
+                ├─ Status   : %s
+                ├─ CPU/RAM  : %.1f%% / %.1f%%
+                ├─ Temp.    : %.1f °C
+                ├─ App Uso  : %s
+                ├─ Rede     : %.2f Mbps
+                ├─ Segurança: %s
+                └─ Data/Hora: %s\
+                """,
+                id, lab, status, cpu, ram, temperature,
+                applicationInUse, networkUsageInMbps,
+                securityAlert, timestamp
+        );
+    }
 }
