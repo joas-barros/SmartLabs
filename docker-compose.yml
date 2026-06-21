@@ -44,20 +44,20 @@ services:
     volumes:
       - ./logs:/app/logs
 
-  #devices-lab2-coap:
-  #  build:
-  #    context: .
-  #    dockerfile: Dockerfile
-  #    target: devices
-  #  container_name: devices_lab2_coap
-  #  command: ["Lab2Coap"]
-  #  restart: always
-  #  environment:
-  #    - GATEWAY_IP=edge-gateway
-  #  depends_on:
-  #    - edge-gateway
-  #  volumes:
-  #    - ./logs:/app/logs
+  devices-lab2-coap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: devices
+    container_name: devices_lab2_coap
+    command: ["Lab2Coap"]
+    restart: always
+    environment:
+      - GATEWAY_IP=edge-gateway
+    depends_on:
+      - edge-gateway
+    volumes:
+      - ./logs:/app/logs
 
 
 volumes:
