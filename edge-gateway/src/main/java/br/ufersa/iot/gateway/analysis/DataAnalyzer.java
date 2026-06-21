@@ -56,7 +56,7 @@ public class DataAnalyzer {
         String id = pc.getId();
 
         // Atualiza Twin local
-        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, k -> new ConcurrentHashMap<>());
+        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         boolean wasOffline = false;
         DeviceState old = labDevices.get(id);
         if (old != null && !old.isOnline) {
@@ -82,7 +82,7 @@ public class DataAnalyzer {
         String lab = ac.getLab();
         String id = ac.getId();
 
-        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, k -> new ConcurrentHashMap<>());
+        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("AC", ac, Instant.now()));
 
         // Processamento local (Edge Rules)
@@ -98,7 +98,7 @@ public class DataAnalyzer {
         String lab = proj.getLab();
         String id = proj.getId();
 
-        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, k -> new ConcurrentHashMap<>());
+        Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("PROJECTOR", proj, Instant.now()));
 
         // Processamento local (Edge Rules)
@@ -290,25 +290,19 @@ public class DataAnalyzer {
         if (pc == null || pc.getLab() == null || pc.getId() == null) return false;
         if (pc.getCpu() == null || pc.getCpu() < 0.0 || pc.getCpu() > 100.0) return false;
         if (pc.getRam() == null || pc.getRam() < 0.0 || pc.getRam() > 100.0) return false;
-        if (pc.getTemperature() == null || pc.getTemperature() < -50.0 || pc.getTemperature() > 150.0) return false;
-        return true;
+        return pc.getTemperature() != null && !(pc.getTemperature() < -50.0) && !(pc.getTemperature() > 150.0);
     }
 
     private boolean validateAC(AirConditioningDTO ac) {
         if (ac == null || ac.getLab() == null || ac.getId() == null) return false;
         if (ac.getEnvironmentTemperature() == null || ac.getEnvironmentTemperature() < -50.0 || ac.getEnvironmentTemperature() > 100.0) return false;
-        if (ac.getPowerConsumptionInWatts() != null && ac.getPowerConsumptionInWatts() < 0) return false;
-        return true;
+        return ac.getPowerConsumptionInWatts() == null || ac.getPowerConsumptionInWatts() >= 0;
     }
 
     private boolean validateProjector(ProjectorDTO proj) {
         if (proj == null || proj.getLab() == null || proj.getId() == null) return false;
         if (proj.getInternalTemperature() == null || proj.getInternalTemperature() < -50.0 || proj.getInternalTemperature() > 150.0) return false;
-        if (proj.getPowerConsumptionInWatts() != null && proj.getPowerConsumptionInWatts() < 0) return false;
-        return true;
+        return proj.getPowerConsumptionInWatts() == null || proj.getPowerConsumptionInWatts() >= 0;
     }
 
-    public Map<String, Map<String, DeviceState>> getTwins() {
-        return twins;
-    }
 }

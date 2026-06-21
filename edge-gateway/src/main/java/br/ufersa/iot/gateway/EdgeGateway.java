@@ -7,16 +7,12 @@ import br.ufersa.iot.gateway.mqtt.MqttSubscriber;
 import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.elements.config.UdpConfig;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class EdgeGateway implements AutoCloseable {
 
-    private final CloudConnector cloudConnector;
     private final DataAnalyzer dataAnalyzer;
     private final ScheduledExecutorService scheduler;
     
@@ -29,7 +25,7 @@ public class EdgeGateway implements AutoCloseable {
         System.out.println("   INICIANDO GATEWAY DE BORDA (EDGE GATEWAY LAYER)       ");
         System.out.println("=========================================================\n");
 
-        this.cloudConnector = new CloudConnector();
+        CloudConnector cloudConnector = new CloudConnector();
         this.dataAnalyzer = new DataAnalyzer(cloudConnector);
         this.scheduler = Executors.newScheduledThreadPool(3);
 
@@ -90,7 +86,8 @@ public class EdgeGateway implements AutoCloseable {
         System.out.println("Edge Gateway fechado.");
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
+        config.LoggerConfig.setup("gateway.log");
         CoapConfig.register();
         UdpConfig.register();
         try (EdgeGateway gateway = new EdgeGateway()) {

@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MqttClient implements MqttCallback {
 
-    private static final String BROKER_URL = "tcp://localhost:1883";
+    private static final String BROKER_URL = System.getenv("BROKER_URL") != null ? System.getenv("BROKER_URL") : "tcp://localhost:1883";
     private final org.eclipse.paho.client.mqttv3.MqttClient client;
     private final ObjectMapper objectMapper;
     private final Set<String> subscriptions = ConcurrentHashMap.newKeySet();
