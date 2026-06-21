@@ -12,6 +12,7 @@
     <modules>
         <module>devices</module>
         <module>edge-gateway</module>
+        <module>mqtt-client</module>
     </modules>
 
     <properties>

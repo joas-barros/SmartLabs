@@ -35,7 +35,6 @@ public class EdgeGateway implements AutoCloseable {
 
         startReceivers();
         startSchedulers();
-        startConsoleListener();
     }
 
     private void startReceivers() {
@@ -76,79 +75,7 @@ public class EdgeGateway implements AutoCloseable {
         System.out.println("[GATEWAY] Agendadores inicializados: Verificação de Conectividade, Sobrecarga e Agregações Periódicas.");
     }
 
-    private void startConsoleListener() {
-        Thread thread = new Thread(() -> {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("\n[Console CLI] Digite 'help' para ver os comandos interativos disponíveis.");
-            while (running) {
-                try {
-                    System.out.print("> ");
-                    String line = reader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    processCommand(line.trim().toLowerCase());
-                } catch (Exception e) {
-                    System.err.println("Erro ao ler comando do console: " + e.getMessage());
-                }
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    private void processCommand(String cmd) {
-        switch (cmd) {
-            case "help" -> {
-                System.out.println("\n--- Comandos do Edge Gateway ---");
-                System.out.println("  online   - Define a conexão com a nuvem como ONLINE.");
-                System.out.println("  offline  - Define a conexão com a nuvem como OFFLINE (cacheamento local).");
-                System.out.println("  status   - Exibe o estado atual da nuvem, cache e tabela de gêmeos digitais.");
-                System.out.println("  help     - Exibe este menu de ajuda.");
-                System.out.println("  exit     - Finaliza o Gateway.");
-                System.out.println("--------------------------------\n");
-            }
-            case "online" -> cloudConnector.setOnline(true);
-            case "offline" -> cloudConnector.setOnline(false);
-            case "status" -> printStatus();
-            case "exit" -> {
-                System.out.println("Finalizando Edge Gateway...");
-                try {
-                    close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                System.exit(0);
-            }
-            default -> System.out.println("Comando inválido. Digite 'help' para a lista de comandos.");
-        }
-    }
-
-    private void printStatus() {
-        System.out.println("\n=========================================================");
-        System.out.println("               ESTADO DO EDGE GATEWAY                    ");
-        System.out.println("=========================================================");
-        System.out.printf("  Nuvem: %s%n", cloudConnector.isOnline() ? "ONLINE" : "OFFLINE (Modo Cache Local)");
-        System.out.printf("  Mensagens no Cache Offline: %d%n", cloudConnector.getCacheSize());
-        System.out.println("---------------------------------------------------------");
-        System.out.println("  Gêmeos Digitais Locais (Estado dos Dispositivos):");
-        
-        Map<String, Map<String, DataAnalyzer.DeviceState>> twins = dataAnalyzer.getTwins();
-        for (String lab : twins.keySet()) {
-            System.out.printf("  [%s]:%n", lab);
-            Map<String, DataAnalyzer.DeviceState> labDevices = twins.get(lab);
-            if (labDevices.isEmpty()) {
-                System.out.println("    Nenhum dispositivo cadastrado.");
-            } else {
-                for (String id : labDevices.keySet()) {
-                    DataAnalyzer.DeviceState state = labDevices.get(id);
-                    System.out.printf("    - %s (%s): %s (Último reporte: %s)%n", 
-                            id, state.type, state.isOnline ? "ONLINE" : "FALHA_CONECTIVIDADE (OFFLINE)", state.lastSeen);
-                }
-            }
-        }
-        System.out.println("=========================================================\n");
-    }
+    // Console listener and command processor are removed to keep the Edge Gateway layer independent.
 
     @Override
     public void close() throws Exception {
