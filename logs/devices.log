@@ -1,0 +1,15 @@
+=========================================================
+   INICIANDO SIMULADOR LAB 1 - MQTT (EDGE & TWINS)       
+=========================================================
+
+[MQTT] Conectado ao broker tcp://localhost:1883 com clientId=Lab1-mqtt
+[LAB 1] Inicializando dispositivos...
+
+[LAB 1] Iniciando Roteiro da Simulação...
+
+
+=================================================
+ >> INICIANDO CÁPITULO: NORMAL_USE (Duração: 60s)
+=================================================
+
+[SCENARIO] Alterado NORMAL_USE para NORMAL_USE

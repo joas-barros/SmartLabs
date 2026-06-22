@@ -104,4 +104,23 @@ public class ProjectorDTO {
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+                """
+                
+                [PROJETOR] %s @ %s
+                ├─ Estado   : %s
+                ├─ Entrada  : %s
+                ├─ Uso      : %d min
+                ├─ Temp.    : %.1f °C
+                ├─ Consumo  : %.1f W
+                └─ Data/Hora: %s\
+                """,
+                id, lab, (isOn != null && isOn ? "LIGADO" : "DESLIGADO"),
+                activeVideoInput, usageTimeInMinutes,
+                internalTemperature, powerConsumptionInWatts, timestamp
+        );
+    }
 }

@@ -8,7 +8,8 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 
 public class CoapPublisher {
     private final String baseUri;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     public CoapPublisher(String baseUri) {
         this.baseUri = baseUri;
@@ -26,6 +27,8 @@ public class CoapPublisher {
                     && response.getCode() != CoAP.ResponseCode.CREATED) {
                 System.err.printf("[CoAP] Resposta inesperada de %s: %s%n",
                         resource, response != null ? response.getCode() : "sem resposta");
+            } else {
+                System.out.printf("[CoAP] Publicado payload %s com sucesso em %s%n", payload, resource);
             }
         } catch (Exception e) {
             System.err.printf("[CoAP] Falha ao publicar em %s: %s%n", resource, e.getMessage());

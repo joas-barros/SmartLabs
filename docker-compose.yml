@@ -1,0 +1,64 @@
+services:
+  mosquitto:
+    build:
+      context: ./mosquitto
+      dockerfile: Dockerfile
+    container_name: mosquitto_broker
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - ./logs:/mosquitto/log
+
+  edge-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: edge-gateway
+    container_name: edge_gateway
+    restart: always
+    environment:
+      - BROKER_IP=mosquitto
+    ports:
+      - "5683:5683/udp"
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./logs:/app/logs
+
+  devices-lab1-mqtt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: devices
+    container_name: devices_lab1_mqtt
+    command: ["Lab1Mqtt"]
+    restart: always
+    environment:
+      - BROKER_IP=mosquitto
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./logs:/app/logs
+
+  devices-lab2-coap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: devices
+    container_name: devices_lab2_coap
+    command: ["Lab2Coap"]
+    restart: always
+    environment:
+      - GATEWAY_IP=edge-gateway
+    depends_on:
+      - edge-gateway
+    volumes:
+      - ./logs:/app/logs
+
+
+volumes:
+  mosquitto_data:

@@ -6,8 +6,8 @@ public class Config {
         // Construtor privado para evitar instância
     }
 
-    public static final String BROKER_IP = "localhost";
-    public static final String GATEWAY_IP = "localhost";
+    public static final String BROKER_IP = System.getenv("BROKER_IP") != null ? System.getenv("BROKER_IP") : "localhost";
+    public static final String GATEWAY_IP = System.getenv("GATEWAY_IP") != null ? System.getenv("GATEWAY_IP") : "localhost";
 
     public static final String BROKER_MQTT_URL = "tcp://" + BROKER_IP + ":1883";
     public static final String GATEWAY_COAP_URL = "coap://" + GATEWAY_IP + ":5683";

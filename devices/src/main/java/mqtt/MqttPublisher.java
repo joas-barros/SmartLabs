@@ -9,7 +9,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class MqttPublisher implements AutoCloseable {
 
     private final MqttClient client;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     public MqttPublisher(String brokerUrl, String clientId) throws MqttException {
         this.client = new MqttClient(brokerUrl, clientId, null);

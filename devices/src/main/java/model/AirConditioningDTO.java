@@ -80,4 +80,22 @@ public class AirConditioningDTO {
         public void setTimestamp(Instant timestamp) {
                 this.timestamp = timestamp;
         }
+
+        @Override
+        public String toString() {
+                return String.format(
+                        """
+                        
+                        ❄️ [AR-CONDICIONADO] %s @ %s
+                        ├─ Estado   : %s
+                        ├─ Modo     : %s
+                        ├─ Temp Amb.: %.1f °C
+                        ├─ Consumo  : %.1f W
+                        └─ Data/Hora: %s\
+                        """,
+                        id, lab, (isOn != null && isOn ? "LIGADO" : "DESLIGADO"),
+                        operationModeAC, environmentTemperature,
+                        powerConsumptionInWatts, timestamp
+                );
+        }
 }
