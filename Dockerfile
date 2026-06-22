@@ -9,6 +9,8 @@ COPY pom.xml .
 COPY devices/pom.xml devices/
 COPY edge-gateway/pom.xml edge-gateway/
 COPY mqtt-client/pom.xml mqtt-client/
+COPY backend/ms-digital-twins/pom.xml backend/ms-digital-twins/
+COPY backend/ms-laboratorio/pom.xml backend/ms-laboratorio/
 
 RUN mvn dependency:go-offline -B
 
@@ -43,3 +45,22 @@ WORKDIR /app
 COPY --from=build /app/mqtt-client/target/mqtt-client-1.0-SNAPSHOT.jar ./mqtt-client.jar
 COPY --from=build /app/mqtt-client/target/dependency ./dependency
 ENTRYPOINT ["java", "-cp", "mqtt-client.jar:dependency/*", "br.ufersa.iot.MqttClient"]
+
+# =========================================================
+# Stage 5: Runtime image for ms-digital-twins (Spring Boot)
+# =========================================================
+FROM eclipse-temurin:25-jre-alpine AS ms-digital-twins
+WORKDIR /app
+# O Spring Boot gera um "Fat JAR" com as dependências embutidas
+COPY --from=build /app/backend/ms-digital-twins/target/ms-digital-twins-0.0.1-SNAPSHOT.jar ./ms-digital-twins.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "ms-digital-twins.jar"]
+
+# =========================================================
+# Stage 6: Runtime image for ms-laboratorio (Spring Boot)
+# =========================================================
+FROM eclipse-temurin:25-jre-alpine AS ms-laboratorio
+WORKDIR /app
+COPY --from=build /app/backend/ms-laboratorio/target/ms-laboratorio-0.0.1-SNAPSHOT.jar ./ms-laboratorio.jar
+EXPOSE 8083
+ENTRYPOINT ["java", "-jar", "ms-laboratorio.jar"]

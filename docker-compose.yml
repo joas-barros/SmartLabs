@@ -71,6 +71,38 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  ms-digital-twins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ms-digital-twins
+    container_name: ms_digital_twins
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8081:8081"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./logs:/app/logs
+
+  ms-laboratorio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ms-laboratorio
+    container_name: ms_laboratorio
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8083:8083"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./logs:/app/logs
+
 
 volumes:
   mosquitto_data:
