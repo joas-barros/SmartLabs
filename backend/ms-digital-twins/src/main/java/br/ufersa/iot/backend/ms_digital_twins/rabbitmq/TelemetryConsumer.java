@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -71,8 +72,8 @@ public class TelemetryConsumer {
     private void processTelemetry(String payload) {
         try {
             Map<String, Object> data = objectMapper.readValue(payload, new TypeReference<>() {});
-            String lab = (String) data.get("lab");
-            String id = (String) data.get("id");
+            String lab = String.valueOf(data.get("lab"));
+            String id = String.valueOf(data.get("id"));
 
             String type = "DESCONHECIDO";
             if (data.containsKey("cpu")) type = "PC";
@@ -91,9 +92,9 @@ public class TelemetryConsumer {
     private void processAlert(String payload) {
         try {
             Map<String, Object> data = objectMapper.readValue(payload, new TypeReference<>() {});
-            String lab = (String) data.get("lab");
-            String id = data.containsKey("dispositivo") ? (String) data.get("dispositivo") : (String) data.get("pc");
-            String alerta = (String) data.get("alerta");
+            String lab = String.valueOf(data.get("lab"));
+            String id = data.containsKey("dispositivo") ? String.valueOf(data.get("dispositivo")) : String.valueOf(data.get("pc"));
+            String alerta = String.valueOf(data.get("alerta"));
 
             if (lab != null && id != null && alerta != null) {
                 service.processAlert(lab, id, "⚠️ ALERTA: " + alerta).subscribe();
