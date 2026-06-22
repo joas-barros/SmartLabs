@@ -1,6 +1,6 @@
 package br.ufersa.iot.backend.ms_laboratorio.model;
 
-import tools.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 

@@ -6,7 +6,7 @@ import br.ufersa.iot.backend.ms_laboratorio.model.RegistroHistorico;
 import br.ufersa.iot.backend.ms_laboratorio.repository.EstadoProcessadoRepository;
 import br.ufersa.iot.backend.ms_laboratorio.repository.HistoricoRepository;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -65,9 +65,11 @@ public class LaboratorioService {
         if (dados != null) {
             if (dados.has("cpu"))               cpu         = dados.path("cpu").asDouble();
             if (dados.has("ram"))               ram         = dados.path("ram").asDouble();
-            if (dados.has("temperatura"))       temperatura = dados.path("temperatura").asDouble();
-            else if (dados.has("temperaturaAmbiente"))  temperatura = dados.path("temperaturaAmbiente").asDouble();
-            else if (dados.has("temperaturaInterna"))   temperatura = dados.path("temperaturaInterna").asDouble();
+
+            // CORREÇÃO DAS CHAVES JSON COM BASE NOS DTOS REAIS
+            if (dados.has("temperature"))       temperatura = dados.path("temperature").asDouble();
+            else if (dados.has("environmentTemperature"))  temperatura = dados.path("environmentTemperature").asDouble();
+            else if (dados.has("internalTemperature"))   temperatura = dados.path("internalTemperature").asDouble();
         }
 
         historicoRepository.adicionar(new RegistroHistorico(
@@ -93,7 +95,8 @@ public class LaboratorioService {
         EstadoProcessado estado = estadoRepository.obterOuCriar(lab);
 
         double cpu         = dados.path("cpu").asDouble();
-        double temperatura = dados.path("temperatura").asDouble();
+        // CORREÇÃO: "temperature" em vez de "temperatura"
+        double temperatura = dados.path("temperature").asDouble();
 
         double mediaCpu  = estado.registrarCpu(dispositivoId, cpu);
         double mediaTemp = estado.registrarTemperatura(dispositivoId, temperatura);
@@ -137,17 +140,17 @@ public class LaboratorioService {
 
     /**
      * Processa o status do AC: se desligado, registra padrão de possível
-     * falha de infraestrutura (complementa a tendência de temperatura
-     * já detectada nos PCs).
+     * falha de infraestrutura.
      */
     private void processarStatusAc(EventoGateway evento) {
         JsonNode dados = evento.getPayload();
         if (dados == null) return;
 
-        boolean ligado = dados.path("ligado").asBoolean(true);
+        // CORREÇÃO: "isOn" e "environmentTemperature"
+        boolean ligado = dados.path("isOn").asBoolean(true);
         if (!ligado) {
             EstadoProcessado estado = estadoRepository.obterOuCriar(evento.getLaboratorio());
-            double tempAmbiente = dados.path("temperaturaAmbiente").asDouble();
+            double tempAmbiente = dados.path("environmentTemperature").asDouble();
             estado.registrarPadraoDetectado(
                     String.format("AC de %s desligado — temperatura ambiente: %.1f°C",
                             evento.getLaboratorio(), tempAmbiente));
@@ -155,9 +158,7 @@ public class LaboratorioService {
     }
 
     /**
-     * Processa métricas agregadas enviadas pelo gateway (média de CPU do lab).
-     * Detecta sobrecarga com base na visão global do laboratório já computada
-     * pelo gateway, como confirmação adicional.
+     * Processa métricas agregadas enviadas pelo gateway.
      */
     private void processarMetricaAgregada(EventoGateway evento) {
         JsonNode dados = evento.getPayload();
@@ -165,7 +166,8 @@ public class LaboratorioService {
 
         EstadoProcessado estado = estadoRepository.obterOuCriar(evento.getLaboratorio());
 
-        double mediaCpu = dados.path("mediaCpu").asDouble();
+        // AQUI ESTÁ CORRETO: O Gateway formata o JSON agregado com "cpu_media"
+        double mediaCpu = dados.path("cpu_media").asDouble();
         if (mediaCpu >= 85.0) {
             estado.registrarPadraoDetectado(
                     String.format("Média de CPU do laboratório %s elevada: %.1f%%",
@@ -173,10 +175,6 @@ public class LaboratorioService {
         }
     }
 
-    /**
-     * Conta PCs que têm CPU média ≥ 85% E temperatura média ≥ 75°C
-     * ao mesmo tempo — correlação "superaquecimento coletivo".
-     */
     private void atualizarCorrelacaoSuperaquecimento(EstadoProcessado estado) {
         int superaquecidos = 0;
         for (Map.Entry<String, Double> entry : estado.getMediasCpu().entrySet()) {
@@ -193,10 +191,6 @@ public class LaboratorioService {
         }
     }
 
-    /**
-     * Identifica sobrecarga do laboratório: ≥ 70% dos PCs monitorados
-     * com CPU média persistentemente alta.
-     */
     private void atualizarSobrecarga(EstadoProcessado estado) {
         int totalPcs = estado.getMediasCpu().size();
         if (totalPcs == 0) return;
@@ -234,10 +228,6 @@ public class LaboratorioService {
         return estadoRepository.obterOuCriar(laboratorio.toUpperCase());
     }
 
-    /**
-     * Estatísticas agregadas sobre os eventos de telemetria de PC no
-     * intervalo informado: médias, máximos, total de registros e alertas.
-     */
     public Map<String, Object> estatisticas(String laboratorio, String intervalo) {
         List<RegistroHistorico> registros = historicoLaboratorio(laboratorio, intervalo);
 

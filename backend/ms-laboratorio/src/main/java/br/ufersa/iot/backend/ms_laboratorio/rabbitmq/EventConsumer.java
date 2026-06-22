@@ -10,9 +10,11 @@ import com.rabbitmq.client.ConnectionFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper; // CORRIGIDO O IMPORT
+import com.fasterxml.jackson.databind.JsonNode;     // NOVO IMPORT
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 
 @Component
@@ -49,8 +51,31 @@ public class EventConsumer {
             channel.basicConsume(RabbitMqConfig.FILA_LABORATORIO, true,
                     (consumerTag, delivery) -> {
                         try {
-                            EventoGateway evento = objectMapper.readValue(
-                                    delivery.getBody(), EventoGateway.class);
+                            String routingKey = delivery.getEnvelope().getRoutingKey();
+                            JsonNode payloadNode = objectMapper.readTree(delivery.getBody());
+
+                            // MONTA O ENVELOPE BASEADO NO QUE CHEGOU
+                            EventoGateway evento = new EventoGateway();
+                            evento.setPayload(payloadNode);
+                            evento.setLaboratorio(payloadNode.path("lab").asText(null));
+
+                            // Extrai o ID flexível (telemetria envia "id", alertas enviam "dispositivo" ou "pc")
+                            String dispId = payloadNode.path("id").asText(
+                                    payloadNode.path("dispositivo").asText(
+                                            payloadNode.path("pc").asText(null)));
+                            evento.setDispositivoId(dispId);
+                            evento.setTimestampGateway(Instant.now());
+
+                            // TRADUZ A ROUTING KEY PARA O TIPO DE EVENTO DO SERVICE
+                            if (routingKey.equals(RabbitMqConfig.RK_TELEMETRIA_PC)) evento.setTipoEvento("STATUS_PC");
+                            else if (routingKey.equals(RabbitMqConfig.RK_TELEMETRIA_AC)) evento.setTipoEvento("STATUS_AC");
+                            else if (routingKey.equals(RabbitMqConfig.RK_TELEMETRIA_PROJETOR)) evento.setTipoEvento("STATUS_PROJETOR");
+                            else if (routingKey.equals(RabbitMqConfig.RK_METRICA_AGREGADA)) evento.setTipoEvento("METRICA_AGREGADA");
+                            else if (routingKey.startsWith("alerta")) {
+                                evento.setTipoEvento("ALERTA");
+                                evento.setDescricao(payloadNode.path("alerta").asText("Alerta desconhecido"));
+                            }
+
                             laboratorioService.processar(evento);
                         } catch (Exception e) {
                             System.err.println("[ms-laboratorio] Erro ao processar evento: "
