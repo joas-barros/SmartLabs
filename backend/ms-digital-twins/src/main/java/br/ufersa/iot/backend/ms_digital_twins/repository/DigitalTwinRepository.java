@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,44 +14,73 @@ public class DigitalTwinRepository {
 
     private final Map<String, DeviceTwin> storage = new ConcurrentHashMap<>();
 
-    /**
-     * Guarda ou atualiza um DeviceTwin.
-     * Retorna um Mono contendo o twin guardado.
-     */
-    public Mono<DeviceTwin> save(DeviceTwin twin) {
-        String key = buildKey(twin.getLab(), twin.getDeviceId());
-        storage.put(key, twin);
-        return Mono.just(twin);
+    public Mono<DeviceTwin> updateState(String lab, String deviceId, String deviceType, Map<String, Object> newState) {
+        String key = buildKey(lab, deviceId);
+
+        // O compute garante que a leitura e a escrita ocorram num único bloco sem interferência
+        DeviceTwin updatedTwin = storage.compute(key, (k, existingTwin) -> {
+            if (existingTwin == null) {
+                DeviceTwin newTwin = new DeviceTwin(lab, deviceId, deviceType);
+                newTwin.setState(newState);
+                return newTwin;
+            } else {
+                existingTwin.setState(newState);
+                existingTwin.setLastUpdate(Instant.now());
+                existingTwin.setOnline(true);
+                return existingTwin;
+            }
+        });
+
+        return Mono.just(updatedTwin);
     }
 
     /**
-     * Procura um dispositivo específico pelo seu Laboratório e ID.
+     * Adiciona um evento ao histórico de forma atômica (apenas se o dispositivo existir).
      */
+    public Mono<DeviceTwin> addEvent(String lab, String deviceId, String descricao) {
+        String key = buildKey(lab, deviceId);
+
+        DeviceTwin updatedTwin = storage.computeIfPresent(key, (k, existingTwin) -> {
+            existingTwin.addEvento(descricao);
+            return existingTwin;
+        });
+
+        return updatedTwin != null ? Mono.just(updatedTwin) : Mono.empty();
+    }
+
+    /**
+     * Atualiza o status de conectividade (Online/Offline)
+     */
+    public Mono<DeviceTwin> updateOnlineStatus(String lab, String deviceId, boolean isOnline) {
+        String key = buildKey(lab, deviceId);
+
+        DeviceTwin updatedTwin = storage.computeIfPresent(key, (k, existingTwin) -> {
+            existingTwin.setOnline(isOnline);
+            existingTwin.setLastUpdate(Instant.now());
+            return existingTwin;
+        });
+
+        return updatedTwin != null ? Mono.just(updatedTwin) : Mono.empty();
+    }
+
+    // ==========================================
+    // MÉTODOS DE CONSULTA (HTTP GETs)
+    // ==========================================
+
     public Mono<DeviceTwin> findById(String lab, String deviceId) {
         DeviceTwin twin = storage.get(buildKey(lab, deviceId));
-        // Se não encontrar, retorna um Mono vazio (Mono.empty()),
-        // o que é o padrão reativo para "Not Found" em vez de retornar null.
         return twin != null ? Mono.just(twin) : Mono.empty();
     }
 
-    /**
-     * Retorna todos os dispositivos de todos os laboratórios (útil para um dashboard global).
-     */
     public Flux<DeviceTwin> findAll() {
         return Flux.fromIterable(storage.values());
     }
 
-    /**
-     * Filtra os dispositivos para retornar apenas os de um laboratório específico.
-     */
     public Flux<DeviceTwin> findByLab(String lab) {
         return Flux.fromIterable(storage.values())
                 .filter(twin -> twin.getLab().equalsIgnoreCase(lab));
     }
 
-    /**
-     * Método utilitário para garantir que a chave seja sempre consistente.
-     */
     private String buildKey(String lab, String deviceId) {
         return lab.toUpperCase() + ":" + deviceId.toUpperCase();
     }
