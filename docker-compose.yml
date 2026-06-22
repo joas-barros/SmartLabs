@@ -13,6 +13,16 @@ services:
       - mosquitto_data:/mosquitto/data
       - ./logs:/mosquitto/log
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq_broker
+    restart: always
+    ports:
+      - "5672:5672"   # Porta AMQP
+      - "15672:15672" # Painel Web (Acesse via localhost:15672 - admin/admin)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   edge-gateway:
     build:
       context: .
@@ -22,10 +32,12 @@ services:
     restart: always
     environment:
       - BROKER_IP=mosquitto
+      - RABBITMQ_HOST=rabbitmq
     ports:
       - "5683:5683/udp"
     depends_on:
       - mosquitto
+      - rabbitmq
     volumes:
       - ./logs:/app/logs
 
@@ -62,3 +74,4 @@ services:
 
 volumes:
   mosquitto_data:
+  rabbitmq_data:

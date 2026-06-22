@@ -15,108 +15,21 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 =================================================
 
 [SCENARIO] Alterado NORMAL_USE para NORMAL_USE
-[CoAP] Publicado payload 
-[COMPUTADOR] PC05 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 12.8% / 28.7%
-├─ Temp.    : 39.7 °C
-├─ App Uso  : browser
-├─ Rede     : 4.93 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:15.352113632Z com sucesso em /lab/pc/PC05
-[CoAP] Publicado payload 
-[COMPUTADOR] PC10 @ LAB2
-├─ Status   : IDLE
-├─ CPU/RAM  : 10.3% / 18.9%
-├─ Temp.    : 39.5 °C
-├─ App Uso  : intellij-idea
-├─ Rede     : 0.39 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:15.123516319Z com sucesso em /lab/pc/PC10
-[CoAP] Publicado payload 
-❄️ [AR-CONDICIONADO] AC01 @ LAB2
-├─ Estado   : LIGADO
-├─ Modo     : AUTOMATIC
-├─ Temp Amb.: 23.5 °C
-├─ Consumo  : 967.5 W
-└─ Data/Hora: 2026-06-21T15:00:15.183548453Z com sucesso em /lab/ac
-[CoAP] Publicado payload 
-[COMPUTADOR] PC02 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 15.3% / 29.7%
-├─ Temp.    : 39.4 °C
-├─ App Uso  : intellij-idea
-├─ Rede     : 1.32 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:15.509276097Z com sucesso em /lab/pc/PC02
-[CoAP] Publicado payload 
-[COMPUTADOR] PC09 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 19.0% / 27.3%
-├─ Temp.    : 42.2 °C
-├─ App Uso  : intellij-idea
-├─ Rede     : 5.22 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:15.540963792Z com sucesso em /lab/pc/PC09
-[CoAP] Publicado payload 
-[COMPUTADOR] PC06 @ LAB2
-├─ Status   : IDLE
-├─ CPU/RAM  : 10.0% / 21.3%
-├─ Temp.    : 42.1 °C
-├─ App Uso  : browser
-├─ Rede     : 0.21 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:15.588378384Z com sucesso em /lab/pc/PC06
-[CoAP] Publicado payload 
-[COMPUTADOR] PC01 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 12.1% / 33.7%
-├─ Temp.    : 40.8 °C
-├─ App Uso  : libreoffice
-├─ Rede     : 1.22 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:16.028652797Z com sucesso em /lab/pc/PC01
-[CoAP] Publicado payload 
-[COMPUTADOR] PC04 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 21.4% / 27.8%
-├─ Temp.    : 40.6 °C
-├─ App Uso  : files
-├─ Rede     : 5.73 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:16.283926030Z com sucesso em /lab/pc/PC04
-[CoAP] Publicado payload 
-[PROJETOR] LAB2 @ PROJ01
-├─ Estado   : DESLIGADO
-├─ Entrada  : NENHUMA
-├─ Uso      : 0 min
-├─ Temp.    : 29.1 °C
-├─ Consumo  : 0.5 W
-└─ Data/Hora: 2026-06-21T15:00:16.290613658Z com sucesso em /lab/projector
-[CoAP] Publicado payload 
-[COMPUTADOR] PC08 @ LAB2
-├─ Status   : ACTIVE
-├─ CPU/RAM  : 17.5% / 28.2%
-├─ Temp.    : 42.8 °C
-├─ App Uso  : intellij-idea
-├─ Rede     : 1.05 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:16.350749368Z com sucesso em /lab/pc/PC08
-[CoAP] Publicado payload 
-[COMPUTADOR] PC07 @ LAB2
-├─ Status   : IDLE
-├─ CPU/RAM  : 12.5% / 20.5%
-├─ Temp.    : 41.3 °C
-├─ App Uso  : files
-├─ Rede     : 0.19 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:16.434488239Z com sucesso em /lab/pc/PC07
-[CoAP] Publicado payload 
-[COMPUTADOR] PC03 @ LAB2
-├─ Status   : IDLE
-├─ CPU/RAM  : 12.1% / 24.9%
-├─ Temp.    : 42.2 °C
-├─ App Uso  : intellij-idea
-├─ Rede     : 0.31 Mbps
-├─ Segurança: ✅ Seguro
-└─ Data/Hora: 2026-06-21T15:00:16.632487040Z com sucesso em /lab/pc/PC03
+
+=================================================
+ >>[LAB@] INICIANDO CÁPITULO: OVERLOAD (Duração: 75s)
+=================================================
+
+[SCENARIO] Alterado NORMAL_USE para OVERLOAD
+
+=================================================
+ >>[LAB@] INICIANDO CÁPITULO: PEAK_USE (Duração: 60s)
+=================================================
+
+[SCENARIO] Alterado OVERLOAD para PEAK_USE
+
+=================================================
+ >>[LAB@] INICIANDO CÁPITULO: NORMAL_USE (Duração: 60s)
+=================================================
+
+[SCENARIO] Alterado PEAK_USE para NORMAL_USE
