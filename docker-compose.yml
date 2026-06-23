@@ -35,9 +35,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
     ports:
       - "5683:5683/udp"
-    depends_on:
-      - mosquitto
-      - rabbitmq
     volumes:
       - ./logs:/app/logs
 
@@ -51,8 +48,6 @@ services:
     restart: always
     environment:
       - BROKER_IP=mosquitto
-    depends_on:
-      - mosquitto
     volumes:
       - ./logs:/app/logs
 
@@ -66,8 +61,6 @@ services:
     restart: always
     environment:
       - GATEWAY_IP=edge-gateway
-    depends_on:
-      - edge-gateway
     volumes:
       - ./logs:/app/logs
 
@@ -82,8 +75,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
     ports:
       - "8081:8081"
-    depends_on:
-      - rabbitmq
     volumes:
       - ./logs:/app/logs
 
@@ -98,8 +89,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
     ports:
       - "8083:8083"
-    depends_on:
-      - rabbitmq
     volumes:
       - ./logs:/app/logs
 
@@ -116,9 +105,6 @@ services:
       - LAB_URL=http://ms-laboratorio:8083
     ports:
       - "8080:8080" # Única porta oficial do sistema aberta para o exterior
-    depends_on:
-      - ms-digital-twins
-      - ms-laboratorio
     volumes:
       - ./logs:/app/logs
 
