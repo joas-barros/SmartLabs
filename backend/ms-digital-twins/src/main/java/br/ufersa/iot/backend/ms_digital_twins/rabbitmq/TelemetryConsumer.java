@@ -35,37 +35,50 @@ public class TelemetryConsumer {
         factory.setPassword(RabbitMqConfig.PASS);
         factory.setAutomaticRecoveryEnabled(true);
 
-        try {
-            this.connection = factory.newConnection();
-            this.channel = connection.createChannel();
+        int tentativas = 0;
+        int maxTentativas = 10;
 
-            // Declara a Exchange e a Fila
-            channel.exchangeDeclare(RabbitMqConfig.EXCHANGE_EVENTOS, BuiltinExchangeType.TOPIC, true);
-            channel.queueDeclare(RabbitMqConfig.FILA_DIGITAL_TWINS, true, false, false, null);
+        while (tentativas < maxTentativas && (this.connection == null || !this.connection.isOpen())) {
+            try {
+                this.connection = factory.newConnection();
+                this.channel = connection.createChannel();
 
-            // Liga a fila à exchange usando o wildcard '#' (recebe TUDO)
-            channel.queueBind(RabbitMqConfig.FILA_DIGITAL_TWINS, RabbitMqConfig.EXCHANGE_EVENTOS, RabbitMqConfig.ROUTING_KEY_WILDCARD);
+                // Declara a Exchange e a Fila
+                channel.exchangeDeclare(RabbitMqConfig.EXCHANGE_EVENTOS, BuiltinExchangeType.TOPIC, true);
+                channel.queueDeclare(RabbitMqConfig.FILA_DIGITAL_TWINS, true, false, false, null);
 
-            System.out.println("[AMQP-RX] Conectado ao RabbitMQ nativo! Escutando a fila: " + RabbitMqConfig.FILA_DIGITAL_TWINS);
+                // Liga a fila à exchange usando o wildcard '#' (recebe TUDO)
+                channel.queueBind(RabbitMqConfig.FILA_DIGITAL_TWINS, RabbitMqConfig.EXCHANGE_EVENTOS, RabbitMqConfig.ROUTING_KEY_WILDCARD);
 
-            DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String routingKey = delivery.getEnvelope().getRoutingKey();
-                String payload = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                System.out.println("[AMQP-RX] Conectado ao RabbitMQ nativo! Escutando a fila: " + RabbitMqConfig.FILA_DIGITAL_TWINS);
 
-                // Encaminha a mensagem consoante a routing key que o Gateway utilizou
-                if (routingKey.startsWith("telemetria")) {
-                    processTelemetry(payload);
-                } else if (routingKey.startsWith("alerta")) {
-                    processAlert(payload);
+                DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+                    String routingKey = delivery.getEnvelope().getRoutingKey();
+                    String payload = new String(delivery.getBody(), StandardCharsets.UTF_8);
+
+                    // Encaminha a mensagem consoante a routing key que o Gateway utilizou
+                    if (routingKey.startsWith("telemetria")) {
+                        processTelemetry(payload);
+                    } else if (routingKey.startsWith("alerta")) {
+                        processAlert(payload);
+                    }
+                };
+
+                // Inicia o consumo das mensagens (autoAck = true para este caso de uso em tempo real)
+                channel.basicConsume(RabbitMqConfig.FILA_DIGITAL_TWINS, true, deliverCallback, consumerTag -> { });
+
+                break; // Conectou com sucesso, sai do loop de tentativas
+
+            } catch (Exception e) {
+                tentativas++;
+                System.err.printf("[AMQP-RX] Falha ao conectar no RabbitMQ (%d/%d): %s. Tentando novamente em 5s...%n",
+                        tentativas, maxTentativas, e.getMessage());
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                 }
-            };
-
-            // Inicia o consumo das mensagens (autoAck = true para este caso de uso em tempo real)
-            channel.basicConsume(RabbitMqConfig.FILA_DIGITAL_TWINS, true, deliverCallback, consumerTag -> { });
-
-        } catch (Exception e) {
-            System.err.println("[AMQP-RX] Erro crítico ao conectar no RabbitMQ: " + e.getMessage());
-            e.printStackTrace();
+            }
         }
     }
 

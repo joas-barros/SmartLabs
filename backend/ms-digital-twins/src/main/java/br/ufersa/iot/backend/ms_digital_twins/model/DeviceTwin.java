@@ -58,10 +58,18 @@ public class DeviceTwin {
     public void setOnline(boolean online) { this.online = online; }
 
     public Map<String, Object> getState() { return state; }
+
     public void setState(Map<String, Object> state) {
         this.state.clear();
         if (state != null) {
-            this.state.putAll(state);
+            // O ConcurrentHashMap NÃO aceita valores nulos (daria NullPointerException)!
+            // Portanto, iteramos e filtramos campos que vêm nulos no JSON
+            // (como o "securityEventDescription": null)
+            for (Map.Entry<String, Object> entry : state.entrySet()) {
+                if (entry.getValue() != null) {
+                    this.state.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
     }
 
