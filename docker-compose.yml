@@ -103,6 +103,24 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-gateway
+    container_name: api_gateway
+    restart: always
+    environment:
+      # Passa o nome interno dos contentores usando o DNS do Docker Compose
+      - TWINS_URL=http://ms-digital-twins:8081
+      - LAB_URL=http://ms-laboratorio:8083
+    ports:
+      - "8080:8080" # Única porta oficial do sistema aberta para o exterior
+    depends_on:
+      - ms-digital-twins
+      - ms-laboratorio
+    volumes:
+      - ./logs:/app/logs
 
 volumes:
   mosquitto_data:

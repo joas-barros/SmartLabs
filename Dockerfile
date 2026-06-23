@@ -64,3 +64,12 @@ WORKDIR /app
 COPY --from=build /app/backend/ms-laboratorio/target/ms-laboratorio-0.0.1-SNAPSHOT.jar ./ms-laboratorio.jar
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "ms-laboratorio.jar"]
+
+# =========================================================
+# Stage 7: Runtime image for api-gateway (Spring Boot)
+# =========================================================
+FROM eclipse-temurin:25-jre-alpine AS api-gateway
+WORKDIR /app
+COPY --from=build /app/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar ./api-gateway.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "api-gateway.jar"]
