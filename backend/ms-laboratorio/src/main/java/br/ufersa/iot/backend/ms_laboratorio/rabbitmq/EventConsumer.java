@@ -78,6 +78,7 @@ public class EventConsumer {
                                 else if (routingKey.startsWith("alerta")) {
                                     evento.setTipoEvento("ALERTA");
                                     evento.setDescricao(payloadNode.path("alerta").asText("Alerta desconhecido"));
+                                    System.out.println("\u001B[35m[DB-HISTÓRICO] Registrando alerta: " + evento.getLaboratorio() + "/" + evento.getDispositivoId() + " -> " + evento.getDescricao() + "\u001B[0m");
                                 }
 
                                 laboratorioService.processar(evento);

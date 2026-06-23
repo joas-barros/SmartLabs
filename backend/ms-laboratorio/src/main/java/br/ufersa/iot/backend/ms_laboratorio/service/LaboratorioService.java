@@ -20,6 +20,11 @@ import java.util.regex.Pattern;
 @Service
 public class LaboratorioService {
 
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_RED = "\u001B[31m";
+    private static final String ANSI_CYAN = "\u001B[36m";
+
     private static final Pattern PADRAO_INTERVALO = Pattern.compile("^(\\d+)([hm])$");
 
     /** Limiar de CPU média na janela para considerar "CPU alta persistente". */
@@ -95,7 +100,6 @@ public class LaboratorioService {
         EstadoProcessado estado = estadoRepository.obterOuCriar(lab);
 
         double cpu         = dados.path("cpu").asDouble();
-        // CORREÇÃO: "temperature" em vez de "temperatura"
         double temperatura = dados.path("temperature").asDouble();
 
         double mediaCpu  = estado.registrarCpu(dispositivoId, cpu);
@@ -109,9 +113,12 @@ public class LaboratorioService {
         if (cpuPersistente && !cpuAlta.contains(dispositivoId)) {
             cpuAlta.add(dispositivoId);
             estado.setDispositivosCpuAltaPersistente(cpuAlta);
-            estado.registrarPadraoDetectado(
-                    String.format("CPU alta persistente em %s/%s: média=%.1f%% nas últimas %d leituras",
-                            lab, dispositivoId, mediaCpu, EstadoProcessado.TAMANHO_JANELA));
+
+            String msg = String.format("CPU alta persistente em %s/%s: média=%.1f%% nas últimas %d leituras",
+                    lab, dispositivoId, mediaCpu, EstadoProcessado.TAMANHO_JANELA);
+            estado.registrarPadraoDetectado(msg);
+            System.out.println(ANSI_YELLOW + "[PADRÃO TEMPORAL] " + msg + ANSI_RESET);
+
         } else if (!cpuPersistente && cpuAlta.contains(dispositivoId)) {
             cpuAlta.remove(dispositivoId);
             estado.setDispositivosCpuAltaPersistente(cpuAlta);
@@ -123,9 +130,10 @@ public class LaboratorioService {
         if (tempCrescente && !tempCresc.contains(dispositivoId)) {
             tempCresc.add(dispositivoId);
             estado.setDispositivosTemperaturaCrescente(tempCresc);
-            estado.registrarPadraoDetectado(
-                    String.format("Tendência de aquecimento em %s/%s: subiu ≥5°C na janela (média=%.1f°C)",
-                            lab, dispositivoId, mediaTemp));
+            String msg = String.format("Tendência de aquecimento em %s/%s: subiu ≥5°C na janela (média=%.1f°C)",
+                    lab, dispositivoId, mediaTemp);
+            estado.registrarPadraoDetectado(msg);
+            System.out.println(ANSI_YELLOW + "[PADRÃO TEMPORAL] " + msg + ANSI_RESET);
         } else if (!tempCrescente && tempCresc.contains(dispositivoId)) {
             tempCresc.remove(dispositivoId);
             estado.setDispositivosTemperaturaCrescente(tempCresc);
@@ -151,9 +159,10 @@ public class LaboratorioService {
         if (!ligado) {
             EstadoProcessado estado = estadoRepository.obterOuCriar(evento.getLaboratorio());
             double tempAmbiente = dados.path("environmentTemperature").asDouble();
-            estado.registrarPadraoDetectado(
-                    String.format("AC de %s desligado — temperatura ambiente: %.1f°C",
-                            evento.getLaboratorio(), tempAmbiente));
+            String msg = String.format("AC de %s desligado — temperatura ambiente: %.1f°C",
+                    evento.getLaboratorio(), tempAmbiente);
+            estado.registrarPadraoDetectado(msg);
+            System.out.println(ANSI_RED + "[FALHA DE INFRAESTRUTURA] " + msg + ANSI_RESET);
         }
     }
 
@@ -168,6 +177,8 @@ public class LaboratorioService {
 
         // AQUI ESTÁ CORRETO: O Gateway formata o JSON agregado com "cpu_media"
         double mediaCpu = dados.path("cpu_media").asDouble();
+
+        System.out.println(ANSI_CYAN + "[MÉTRICA AGREGADA] Recebida agregação do " + evento.getLaboratorio() + " (CPU Média: " + mediaCpu + "%)" + ANSI_RESET);
         if (mediaCpu >= 85.0) {
             estado.registrarPadraoDetectado(
                     String.format("Média de CPU do laboratório %s elevada: %.1f%%",
@@ -183,11 +194,16 @@ public class LaboratorioService {
             double mediaTemp = estado.getMediasTemperatura().getOrDefault(dispositivoId, 0.0);
             if (mediaCpu >= 85.0 && mediaTemp >= 75.0) superaquecidos++;
         }
+
+        int anteriores = estado.getPcsSuperaquecimento();
         estado.setPcsSuperaquecimento(superaquecidos);
-        if (superaquecidos > 0) {
-            estado.registrarPadraoDetectado(
-                    String.format("Correlação superaquecimento em %s: %d PC(s) com CPU e temperatura altas simultaneamente",
-                            estado.getLaboratorio(), superaquecidos));
+
+        // CORRIGIDO: Só deteta e regista o padrão se o número mudar, evitando flood na memória!
+        if (superaquecidos > 0 && superaquecidos != anteriores) {
+            String msg = String.format("Correlação superaquecimento em %s: %d PC(s) com CPU e temperatura altas simultaneamente",
+                    estado.getLaboratorio(), superaquecidos);
+            estado.registrarPadraoDetectado(msg);
+            System.out.println(ANSI_RED + "[CORRELAÇÃO CRÍTICA] " + msg + ANSI_RESET);
         }
     }
 
@@ -203,11 +219,13 @@ public class LaboratorioService {
 
         if (emSobrecarga && !estado.isEmSobrecarga()) {
             estado.setEmSobrecarga(true);
-            estado.registrarPadraoDetectado(
-                    String.format("SOBRECARGA em %s: %d/%d PCs com CPU média ≥ %.0f%%",
-                            estado.getLaboratorio(), pcsComCpuAlta, totalPcs, LIMIAR_CPU_PERSISTENTE));
+            String msg = String.format("SOBRECARGA em %s: %d/%d PCs com CPU média ≥ %.0f%%",
+                    estado.getLaboratorio(), pcsComCpuAlta, totalPcs, LIMIAR_CPU_PERSISTENTE);
+            estado.registrarPadraoDetectado(msg);
+            System.out.println(ANSI_RED + "[SOBRECARGA] " + msg + ANSI_RESET);
         } else if (!emSobrecarga && estado.isEmSobrecarga()) {
             estado.setEmSobrecarga(false);
+            System.out.println(ANSI_CYAN + "[RECUPERAÇÃO] " + estado.getLaboratorio() + " saiu do estado de sobrecarga." + ANSI_RESET);
         }
     }
 
