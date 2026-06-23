@@ -15,6 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DataAnalyzer {
 
+    // Códigos ANSI para colorir os logs no console
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_RED = "\u001B[31m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_CYAN = "\u001B[36m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+
     private final CloudConnector cloudConnector;
     private final ObjectMapper objectMapper;
 
@@ -29,6 +36,7 @@ public class DataAnalyzer {
         this.cloudConnector = cloudConnector;
         this.objectMapper = new ObjectMapper();
 
+        // Adicione esta linha para ensinar o Jackson a converter o Instant (Data/Hora)
         this.objectMapper.registerModule(new JavaTimeModule());
 
         twins.put("LAB1", new ConcurrentHashMap<>());
@@ -55,7 +63,7 @@ public class DataAnalyzer {
 
     public void processPC(PCDTO pc) {
         if (!validatePC(pc)) {
-            System.err.printf("[FILTRO] Telemetria de PC descartada (Dados Inválidos): Lab=%s, ID=%s%n", pc.getLab(), pc.getId());
+            System.err.printf(ANSI_YELLOW + "[FILTRO] Telemetria de PC descartada (Dados Inválidos): Lab=%s, ID=%s%n" + ANSI_RESET, pc.getLab(), pc.getId());
             return;
         }
 
@@ -72,16 +80,16 @@ public class DataAnalyzer {
         labDevices.put(id, new DeviceState("PC", pc, Instant.now()));
 
         if (wasOffline) {
-            triggerEdgeAlert(lab, id, "CONECTIVIDADE_RESTABELECIDA", 
-                    String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"info\":\"Voltou a reportar dados\"}", lab, id));
+            triggerEdgeAlert(lab, id, "CONECTIVIDADE_RESTABELECIDA",
+                    String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"CONECTIVIDADE_RESTABELECIDA\",\"info\":\"Voltou a reportar dados\"}", lab, id));
         }
 
+        // Envio da Telemetria Crua para o RabbitMQ
         try {
             cloudConnector.send("TELEMETRIA_PC", objectMapper.writeValueAsString(pc));
         } catch (Exception e) {
             System.err.println("[DATA-ANALYZER] Erro ao serializar PCDTO: " + e.getMessage());
         }
-
 
         // Processamento local (Edge Rules)
         checkPCRules(pc);
@@ -89,7 +97,7 @@ public class DataAnalyzer {
 
     public void processAC(AirConditioningDTO ac) {
         if (!validateAC(ac)) {
-            System.err.printf("[FILTRO] Telemetria de Ar Condicionado descartada (Dados Inválidos): Lab=%s, ID=%s%n", ac.getLab(), ac.getId());
+            System.err.printf(ANSI_YELLOW + "[FILTRO] Telemetria de Ar Condicionado descartada (Dados Inválidos): Lab=%s, ID=%s%n" + ANSI_RESET, ac.getLab(), ac.getId());
             return;
         }
 
@@ -99,6 +107,7 @@ public class DataAnalyzer {
         Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("AC", ac, Instant.now()));
 
+        // Envio da Telemetria Crua para o RabbitMQ
         try {
             cloudConnector.send("TELEMETRIA_AC", objectMapper.writeValueAsString(ac));
         } catch (Exception e) {
@@ -111,7 +120,7 @@ public class DataAnalyzer {
 
     public void processProjector(ProjectorDTO proj) {
         if (!validateProjector(proj)) {
-            System.err.printf("[FILTRO] Telemetria de Projetor descartada (Dados Inválidos): Lab=%s, ID=%s%n", proj.getLab(), proj.getId());
+            System.err.printf(ANSI_YELLOW + "[FILTRO] Telemetria de Projetor descartada (Dados Inválidos): Lab=%s, ID=%s%n" + ANSI_RESET, proj.getLab(), proj.getId());
             return;
         }
 
@@ -121,6 +130,7 @@ public class DataAnalyzer {
         Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("PROJECTOR", proj, Instant.now()));
 
+        // Envio da Telemetria Crua para o RabbitMQ
         try {
             cloudConnector.send("TELEMETRIA_PROJETOR", objectMapper.writeValueAsString(proj));
         } catch (Exception e) {
@@ -132,7 +142,7 @@ public class DataAnalyzer {
     }
 
     public void processExternalAlert(String lab, String dispositivo, String alerta) {
-        System.out.printf("[ALERTA-DISPOSITIVO] Recebido alerta de dispositivo: Lab=%s, Disp=%s, Tipo=%s%n", lab, dispositivo, alerta);
+        System.out.printf(ANSI_RED + "[ALERTA-DISPOSITIVO] Recebido alerta de dispositivo: Lab=%s, Disp=%s, Tipo=%s%n" + ANSI_RESET, lab, dispositivo, alerta);
         // Encaminha alerta crítico imediatamente para a nuvem
         String payload = String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"%s\",\"origem\":\"dispositivo\"}", lab, dispositivo, alerta);
         cloudConnector.send("ALERT", payload);
@@ -143,8 +153,8 @@ public class DataAnalyzer {
         if (pc.getCpu() != null && pc.getCpu() > 90.0) {
             String alertKey = pc.getLab() + "-" + pc.getId() + "-HIGH_CPU";
             if (shouldTriggerAlert(alertKey)) {
-                triggerEdgeAlert(pc.getLab(), pc.getId(), "CPU_ALTA", 
-                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"cpu\":%.1f}", pc.getLab(), pc.getId(), pc.getCpu()));
+                triggerEdgeAlert(pc.getLab(), pc.getId(), "CPU_ALTA",
+                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"CPU_ALTA\",\"cpu\":%.1f}", pc.getLab(), pc.getId(), pc.getCpu()));
             }
         }
 
@@ -152,8 +162,8 @@ public class DataAnalyzer {
         if (pc.getTemperature() != null && pc.getTemperature() > 85.0) {
             String alertKey = pc.getLab() + "-" + pc.getId() + "-OVERHEATING";
             if (shouldTriggerAlert(alertKey)) {
-                triggerEdgeAlert(pc.getLab(), pc.getId(), "SUPERAQUECIMENTO_PC", 
-                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"temperatura\":%.1f}", pc.getLab(), pc.getId(), pc.getTemperature()));
+                triggerEdgeAlert(pc.getLab(), pc.getId(), "SUPERAQUECIMENTO_PC",
+                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"SUPERAQUECIMENTO_PC\",\"temperatura\":%.1f}", pc.getLab(), pc.getId(), pc.getTemperature()));
             }
         }
     }
@@ -163,8 +173,8 @@ public class DataAnalyzer {
         if (ac.getEnvironmentTemperature() != null && ac.getEnvironmentTemperature() > 30.0 && (ac.getIsOn() == null || !ac.getIsOn())) {
             String alertKey = ac.getLab() + "-" + ac.getId() + "-TEMP_ALTA_DESLIGADO";
             if (shouldTriggerAlert(alertKey)) {
-                triggerEdgeAlert(ac.getLab(), ac.getId(), "FALHA_INFRA_AR_DESLIGADO", 
-                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"temperatura_ambiente\":%.1f}", ac.getLab(), ac.getId(), ac.getEnvironmentTemperature()));
+                triggerEdgeAlert(ac.getLab(), ac.getId(), "FALHA_INFRA_AR_DESLIGADO",
+                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"FALHA_INFRA_AR_DESLIGADO\",\"temperatura_ambiente\":%.1f}", ac.getLab(), ac.getId(), ac.getEnvironmentTemperature()));
             }
         }
     }
@@ -174,8 +184,8 @@ public class DataAnalyzer {
         if (proj.getInternalTemperature() != null && proj.getInternalTemperature() > 80.0) {
             String alertKey = proj.getLab() + "-" + proj.getId() + "-OVERHEATING";
             if (shouldTriggerAlert(alertKey)) {
-                triggerEdgeAlert(proj.getLab(), proj.getId(), "SUPERAQUECIMENTO_PROJETOR", 
-                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"temperatura_interna\":%.1f}", proj.getLab(), proj.getId(), proj.getInternalTemperature()));
+                triggerEdgeAlert(proj.getLab(), proj.getId(), "SUPERAQUECIMENTO_PROJETOR",
+                        String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"SUPERAQUECIMENTO_PROJETOR\",\"temperatura_interna\":%.1f}", proj.getLab(), proj.getId(), proj.getInternalTemperature()));
             }
         }
     }
@@ -192,8 +202,9 @@ public class DataAnalyzer {
 
                     if (secondsSinceLastData > threshold) {
                         state.isOnline = false;
-                        triggerEdgeAlert(lab, id, "FALHA_CONECTIVIDADE", 
-                                String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"segundos_sem_dados\":%d}", lab, id, secondsSinceLastData));
+                        // CORRIGIDO: Inserido "alerta":"FALHA_CONECTIVIDADE"
+                        triggerEdgeAlert(lab, id, "FALHA_CONECTIVIDADE",
+                                String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"alerta\":\"FALHA_CONECTIVIDADE\",\"segundos_sem_dados\":%d}", lab, id, secondsSinceLastData));
                     }
                 }
             }
@@ -219,14 +230,17 @@ public class DataAnalyzer {
             if (activePcCount > 0) {
                 double avgCpu = totalCpu / activePcCount;
                 String alertKey = lab + "-OVERLOAD";
+
                 if (avgCpu > 80.0) {
                     if (shouldTriggerAlert(alertKey)) {
-                        triggerEdgeAlert(lab, "LAB", "SOBRECARGA_LABORATORIO", 
-                                String.format("{\"lab\":\"%s\",\"cpu_media\":%.1f,\"pcs_ativos\":%d}", lab, avgCpu, activePcCount));
+                        triggerEdgeAlert(lab, "LAB", "SOBRECARGA_LABORATORIO",
+                                String.format("{\"lab\":\"%s\",\"dispositivo\":\"LAB\",\"alerta\":\"SOBRECARGA_LABORATORIO\",\"cpu_media\":%.1f,\"pcs_ativos\":%d}", lab, avgCpu, activePcCount));
                     }
                 } else {
-                    // Se o alarme estava ativo e a sobrecarga acabou, remove o status de alerta
-                    activeAlerts.remove(alertKey);
+                    // Se o alarme estava ativo e a sobrecarga acabou, remove o status de alerta e notifica a recuperação (Ciano)
+                    if (activeAlerts.remove(alertKey) != null) {
+                        System.out.println(ANSI_CYAN + "[RECUPERAÇÃO-EDGE] " + lab + " saiu do estado de sobrecarga local. (Média atual: " + String.format("%.1f", avgCpu) + "%)" + ANSI_RESET);
+                    }
                 }
             }
         }
@@ -244,12 +258,12 @@ public class DataAnalyzer {
     }
 
     private void triggerEdgeAlert(String lab, String dispositivo, String alerta, String payload) {
-        System.out.printf("[EDGE-ALERTA-DETECTADO] >>> %s em %s (%s) <<<%n", alerta, lab, dispositivo);
+        System.out.printf(ANSI_RED + "[EDGE-ALERTA-DETECTADO] >>> %s em %s (%s) <<<%n" + ANSI_RESET, alerta, lab, dispositivo);
         cloudConnector.send("EDGE_ALERT", payload);
     }
 
     // ==========================================
-    // AGREGACAO DE METRICAS LOCAIS (PERIODICA)
+    // AGREGAÇÃO DE MÉTRICAS LOCAIS (PERIÓDICA)
     // ==========================================
 
     /**
@@ -293,15 +307,16 @@ public class DataAnalyzer {
             if (pcCount > 0 || acEnvironmentTemp != null || projOn != null) {
                 String aggJson = String.format(
                         "{\"lab\":\"%s\",\"pcs_ativos\":%d,\"cpu_media\":%.1f,\"ram_media\":%.1f,\"temperatura_media_pc\":%.1f," +
-                        "\"ar_ligado\":%s,\"temperatura_ambiente\":%s,\"ar_potencia_watts\":%s,\"projetor_ligado\":%s,\"timestamp\":\"%s\"}",
+                                "\"ar_ligado\":%s,\"temperatura_ambiente\":%s,\"ar_potencia_watts\":%s,\"projetor_ligado\":%s,\"timestamp\":\"%s\"}",
                         lab, pcCount, avgCpu, avgRam, avgTemp,
-                        acOn, 
+                        acOn,
                         acEnvironmentTemp != null ? String.format("%.1f", acEnvironmentTemp) : "null",
                         acPower != null ? String.format("%.1f", acPower) : "null",
                         projOn,
                         Instant.now()
                 );
-                
+
+                System.out.println(ANSI_GREEN + "[EDGE-AGREGAÇÃO] Resumo periódico calculado e pronto a enviar: " + lab + " (PCs ativos: " + pcCount + ")" + ANSI_RESET);
                 // Envia dados agregados filtrados
                 cloudConnector.send("AGGREGATED_METRICS", aggJson);
             }
@@ -330,5 +345,4 @@ public class DataAnalyzer {
         if (proj.getInternalTemperature() == null || proj.getInternalTemperature() < -50.0 || proj.getInternalTemperature() > 150.0) return false;
         return proj.getPowerConsumptionInWatts() == null || proj.getPowerConsumptionInWatts() >= 0;
     }
-
 }

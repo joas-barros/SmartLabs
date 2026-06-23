@@ -25,6 +25,13 @@ public class CoapOrchestrator {
         System.out.println("   INICIANDO SIMULADOR LAB 2 - CoAP (AUTÔNOMO)           ");
         System.out.println("=========================================================\n");
 
+        System.out.println("[LAB 2] A aguardar 5 segundos pela inicialização do Edge Gateway...");
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         // Instancia o publicador CoAP apontando para o Gateway
         CoapPublisher coapPublisher = new CoapPublisher(Config.GATEWAY_COAP_URL);
 
