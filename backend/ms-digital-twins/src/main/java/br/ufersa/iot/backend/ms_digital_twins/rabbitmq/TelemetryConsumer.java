@@ -15,6 +15,11 @@ import java.util.Map;
 
 @Component
 public class TelemetryConsumer {
+
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+
     private final DigitalTwinService service;
     private final ObjectMapper objectMapper;
 
@@ -96,6 +101,7 @@ public class TelemetryConsumer {
             if (lab != null && id != null) {
                 // Subscreve a operação no repositório reativo
                 service.processTelemetry(lab, id, type, data).subscribe();
+                System.out.println(ANSI_GREEN + "[TWIN-UPDATED] Telemetria atualizada: " + lab + "/" + id + " (" + type + ")" + ANSI_RESET);
             }
         } catch (Exception e) {
             System.err.println("[AMQP-RX] Erro ao processar telemetria: " + e.getMessage());
@@ -112,6 +118,8 @@ public class TelemetryConsumer {
             if (lab != null && id != null && alerta != null) {
                 service.processAlert(lab, id, "⚠️ ALERTA: " + alerta).subscribe();
                 System.out.println("[TWIN-UPDATED] Evento de alerta adicionado: " + lab + "/" + id);
+
+                System.out.println(ANSI_YELLOW + "[TWIN-ALERT] Evento de alerta registado: " + lab + "/" + id + " -> " + alerta + ANSI_RESET);
             }
         } catch (Exception e) {
             System.err.println("[AMQP-RX] Erro ao processar alerta: " + e.getMessage());
