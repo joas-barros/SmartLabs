@@ -13,6 +13,11 @@ import java.util.Map;
 @Configuration
 public class GatewayHandler {
 
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_BLUE = "\u001B[34m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_RED = "\u001B[31m";
+
     private final WebClient digitalTwinsClient;
     private final WebClient laboratorioClient;
 
@@ -76,6 +81,10 @@ public class GatewayHandler {
     public Mono<ServerResponse> painelLaboratorio(ServerRequest req) {
         String lab = req.pathVariable("lab").toUpperCase();
 
+        System.out.println("\n" + ANSI_BLUE + "[API GATEWAY] Recebida requisição para PAINEL CONSOLIDADO do " + lab + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "[API GATEWAY] Disparando chamadas paralelas para os microsserviços..." + ANSI_RESET);
+        long startTime = System.currentTimeMillis();
+
         // 1. Busca o status atual no ms-digital-twins
         // Usamos Object.class pois a resposta é uma Lista (Array JSON)
         Mono<Object> statusMono = digitalTwinsClient.get()
@@ -94,6 +103,9 @@ public class GatewayHandler {
         // 3. Aguarda os dois terminarem e agrupa a resposta
         return Mono.zip(statusMono, estatisticasMono)
                 .flatMap(tupla -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println(ANSI_GREEN + "[API GATEWAY] Sucesso (" + duration + "ms) - Painel consolidado montado!" + ANSI_RESET);
+
                     Map<String, Object> resposta = Map.of(
                             "laboratorio",            lab,
                             "statusAtual",            tupla.getT1(),
@@ -108,17 +120,28 @@ public class GatewayHandler {
     // ─── Auxiliar ────────────────────────────────────────────────────────
 
     private Mono<ServerResponse> proxy(WebClient client, String uri) {
+        System.out.println("\n" + ANSI_BLUE + "[API GATEWAY] Recebida requisição externa, encaminhando para o backend: " + uri + ANSI_RESET);
+        long startTime = System.currentTimeMillis();
+
         return client.get()
                 .uri(uri)
                 .retrieve()
                 .bodyToMono(Object.class)
-                .flatMap(corpo -> ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(corpo))
-                .onErrorResume(erro -> ServerResponse.status(502)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(Map.of(
-                                "erro",    "Serviço indisponível",
-                                "detalhe", erro.getMessage())));
+                .flatMap(corpo -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println(ANSI_GREEN + "[API GATEWAY] ✅ Sucesso (" + duration + "ms) - Retornou dados de: " + uri + ANSI_RESET);
+                    return ServerResponse.ok()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(corpo);
+                })
+                .onErrorResume(erro -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.err.println(ANSI_RED + "[API GATEWAY] Erro (" + duration + "ms) ao acessar " + uri + " - Motivo: " + erro.getMessage() + ANSI_RESET);
+                    return ServerResponse.status(502)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(Map.of(
+                                    "erro",    "Serviço indisponível",
+                                    "detalhe", erro.getMessage()));
+                });
     }
 }
