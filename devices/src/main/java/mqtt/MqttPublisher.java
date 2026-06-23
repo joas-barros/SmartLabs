@@ -30,11 +30,15 @@ public class MqttPublisher implements AutoCloseable {
      */
     public void publish(String topic, Object payload) {
         try {
-            byte[] json = objectMapper.writeValueAsBytes(payload);
-            MqttMessage message = new MqttMessage(json);
+            // CORREÇÃO: Evita dupla serialização se o payload já for uma String (JSON formatado)
+            byte[] jsonBytes = payload instanceof String
+                    ? ((String) payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    : objectMapper.writeValueAsBytes(payload);
+
+            MqttMessage message = new MqttMessage(jsonBytes);
             message.setQos(0);
             client.publish(topic, message);
-            System.out.println("[MQTT] Publicado messagem " + message + " em " + topic);
+            System.out.println("[MQTT] Publicado messagem em " + topic);
         } catch (Exception e) {
             System.err.printf("[MQTT] Falha ao publicar em %s: %s%n", topic, e.getMessage());
         }
@@ -45,11 +49,15 @@ public class MqttPublisher implements AutoCloseable {
      */
     public void publishAlert(String topic, Object payload) {
         try {
-            byte[] json = objectMapper.writeValueAsBytes(payload);
-            MqttMessage message = new MqttMessage(json);
+            // CORREÇÃO: Evita dupla serialização
+            byte[] jsonBytes = payload instanceof String
+                    ? ((String) payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    : objectMapper.writeValueAsBytes(payload);
+
+            MqttMessage message = new MqttMessage(jsonBytes);
             message.setQos(1);
             client.publish(topic, message);
-            System.out.println("[MQTT] Publicado alerta " + message + " em " + topic);
+            System.out.println("[MQTT] Publicado alerta em " + topic);
         } catch (Exception e) {
             System.err.printf("[MQTT] Falha ao publicar em %s: %s%n", topic, e.getMessage());
         }

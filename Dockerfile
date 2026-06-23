@@ -11,6 +11,9 @@ COPY edge-gateway/pom.xml edge-gateway/
 COPY mqtt-client/pom.xml mqtt-client/
 COPY backend/ms-digital-twins/pom.xml backend/ms-digital-twins/
 COPY backend/ms-laboratorio/pom.xml backend/ms-laboratorio/
+COPY api-gateway/pom.xml api-gateway/
+# Copiamos o POM do cliente entre aspas por causa dos espaços no nome da pasta
+COPY ["cliente-http (1)/cliente-http/pom.xml", "cliente-http (1)/cliente-http/"]
 
 RUN mvn dependency:go-offline -B
 

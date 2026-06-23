@@ -36,10 +36,14 @@ public class CoapPublisher {
     public void publish(String resource, Object payload) {
         try {
             CoapClient client = getClient(resource);
-            byte[] json = objectMapper.writeValueAsBytes(payload);
+
+            byte[] jsonBytes = payload instanceof String
+                    ? ((String) payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    : objectMapper.writeValueAsBytes(payload);
+
             client.useNONs(); // mensagens não confirmáveis (NON), análogo ao QoS 0 do MQTT
 
-            CoapResponse response = client.post(json, MediaTypeRegistry.APPLICATION_JSON);
+            CoapResponse response = client.post(jsonBytes, MediaTypeRegistry.APPLICATION_JSON);
 
             if (response == null || response.getCode() != CoAP.ResponseCode.CHANGED
                     && response.getCode() != CoAP.ResponseCode.CREATED) {
@@ -56,8 +60,12 @@ public class CoapPublisher {
     public void publishAlert(String resource, Object payload) {
         try {
             CoapClient client = getClient(resource);
-            byte[] json = objectMapper.writeValueAsBytes(payload);
-            CoapResponse response = client.post(json, MediaTypeRegistry.APPLICATION_JSON);
+
+            byte[] jsonBytes = payload instanceof String
+                    ? ((String) payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    : objectMapper.writeValueAsBytes(payload);
+
+            CoapResponse response = client.post(jsonBytes, MediaTypeRegistry.APPLICATION_JSON);
 
             if (response == null) {
                 System.err.printf("[CoAP] Alerta sem resposta do gateway: %s%n", resource);
