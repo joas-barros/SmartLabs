@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+services:
+  digital-twins:
+    url: ${TWINS_URL:http://localhost:8081}
+  lab:
+    url: ${LAB_URL:http://localhost:8083}

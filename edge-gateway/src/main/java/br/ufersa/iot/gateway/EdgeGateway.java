@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class EdgeGateway implements AutoCloseable {
 
+    private final CloudConnector cloudConnector;
     private final DataAnalyzer dataAnalyzer;
     private final ScheduledExecutorService scheduler;
     
@@ -25,8 +26,8 @@ public class EdgeGateway implements AutoCloseable {
         System.out.println("   INICIANDO GATEWAY DE BORDA (EDGE GATEWAY LAYER)       ");
         System.out.println("=========================================================\n");
 
-        CloudConnector cloudConnector = new CloudConnector();
-        this.dataAnalyzer = new DataAnalyzer(cloudConnector);
+        this.cloudConnector = new CloudConnector();
+        this.dataAnalyzer = new DataAnalyzer(this.cloudConnector);
         this.scheduler = Executors.newScheduledThreadPool(3);
 
         startReceivers();
@@ -82,6 +83,10 @@ public class EdgeGateway implements AutoCloseable {
         }
         if (coapReceiver != null) {
             coapReceiver.close();
+        }
+
+        if (cloudConnector != null) {
+            cloudConnector.close();
         }
         System.out.println("Edge Gateway fechado.");
     }

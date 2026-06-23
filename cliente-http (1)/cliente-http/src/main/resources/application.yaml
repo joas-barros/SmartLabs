@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: http-client
+  main:
+    # CRÍTICO: Impede o Spring de iniciar um servidor Tomcat na porta 8080
+    # garantindo que rode apenas como um script de terminal (CLI)
+    web-application-type: none
+
+# Aponta para o API Gateway (Usa variável de ambiente se estiver no Docker)
+api-gateway:
+  url: ${GATEWAY_URL:http://localhost:8080}

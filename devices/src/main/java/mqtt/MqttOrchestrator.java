@@ -94,7 +94,7 @@ public class MqttOrchestrator {
 
             PCSimulator pc = new PCSimulator(Config.LAB1, pcId, sm, mqttConsumer);
             // Uso do Jitter: Atraso inicial aleatório entre 0 e 2000 milissegundos
-            scheduler.scheduleAtFixedRate(pc, jitter(), Config.PC_INTERVAL_SEC, TimeUnit.SECONDS);
+            scheduler.scheduleAtFixedRate(pc, jitter(), Config.PC_INTERVAL_SEC * 1000L, TimeUnit.MILLISECONDS);
         }
 
         // Inicializa o Ar-Condicionado do LAB 1
@@ -102,12 +102,12 @@ public class MqttOrchestrator {
             mqtt.publish(Config.acTopic(Config.LAB1), dto);
         };
         ACSimulator ac = new ACSimulator(Config.LAB1, "AC01", sm, acConsumer);
-        scheduler.scheduleAtFixedRate(ac, jitter(), Config.AIR_CONDITIONING_INTERVAL_SEC, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(ac, jitter(), Config.AIR_CONDITIONING_INTERVAL_SEC * 1000L, TimeUnit.MILLISECONDS);
 
         // Inicializa o Projetor do LAB 1
         Consumer<ProjectorDTO> projConsumer = dto -> mqtt.publish(Config.projectorTopic(Config.LAB1), dto);
         ProjectorSimulator projetor = new ProjectorSimulator(Config.LAB1, "PROJ01", sm, projConsumer);
-        scheduler.scheduleAtFixedRate(projetor, jitter(), Config.PROJECTOR_INTERVAL_SEC, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(projetor, jitter(), Config.PROJECTOR_INTERVAL_SEC * 1000L, TimeUnit.MILLISECONDS);
     }
 
     /**

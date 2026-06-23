@@ -13,6 +13,10 @@
         <module>devices</module>
         <module>edge-gateway</module>
         <module>mqtt-client</module>
+        <module>backend/ms-digital-twins</module>
+        <module>backend/ms-laboratorio</module>
+        <module>api-gateway</module>
+        <module>cliente-http (1)/cliente-http</module>
     </modules>
 
     <properties>

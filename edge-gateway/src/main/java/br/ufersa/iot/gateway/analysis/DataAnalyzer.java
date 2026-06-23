@@ -1,6 +1,8 @@
 package br.ufersa.iot.gateway.analysis;
 
 import br.ufersa.iot.gateway.cloud.CloudConnector;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import model.AirConditioningDTO;
 import model.PCDTO;
 import model.PCState;
@@ -14,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataAnalyzer {
 
     private final CloudConnector cloudConnector;
+    private final ObjectMapper objectMapper;
 
     // Estrutura de dados para o Device Twin local dos dispositivos
     // LabId -> DeviceId -> DeviceState
@@ -24,6 +27,10 @@ public class DataAnalyzer {
 
     public DataAnalyzer(CloudConnector cloudConnector) {
         this.cloudConnector = cloudConnector;
+        this.objectMapper = new ObjectMapper();
+
+        this.objectMapper.registerModule(new JavaTimeModule());
+
         twins.put("LAB1", new ConcurrentHashMap<>());
         twins.put("LAB2", new ConcurrentHashMap<>());
     }
@@ -69,6 +76,13 @@ public class DataAnalyzer {
                     String.format("{\"lab\":\"%s\",\"dispositivo\":\"%s\",\"info\":\"Voltou a reportar dados\"}", lab, id));
         }
 
+        try {
+            cloudConnector.send("TELEMETRIA_PC", objectMapper.writeValueAsString(pc));
+        } catch (Exception e) {
+            System.err.println("[DATA-ANALYZER] Erro ao serializar PCDTO: " + e.getMessage());
+        }
+
+
         // Processamento local (Edge Rules)
         checkPCRules(pc);
     }
@@ -85,6 +99,12 @@ public class DataAnalyzer {
         Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("AC", ac, Instant.now()));
 
+        try {
+            cloudConnector.send("TELEMETRIA_AC", objectMapper.writeValueAsString(ac));
+        } catch (Exception e) {
+            System.err.println("[DATA-ANALYZER] Erro ao serializar AirConditioningDTO: " + e.getMessage());
+        }
+
         // Processamento local (Edge Rules)
         checkACRules(ac);
     }
@@ -100,6 +120,12 @@ public class DataAnalyzer {
 
         Map<String, DeviceState> labDevices = twins.computeIfAbsent(lab, _ -> new ConcurrentHashMap<>());
         labDevices.put(id, new DeviceState("PROJECTOR", proj, Instant.now()));
+
+        try {
+            cloudConnector.send("TELEMETRIA_PROJETOR", objectMapper.writeValueAsString(proj));
+        } catch (Exception e) {
+            System.err.println("[DATA-ANALYZER] Erro ao serializar ProjectorDTO: " + e.getMessage());
+        }
 
         // Processamento local (Edge Rules)
         checkProjectorRules(proj);

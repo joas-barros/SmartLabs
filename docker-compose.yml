@@ -13,6 +13,16 @@ services:
       - mosquitto_data:/mosquitto/data
       - ./logs:/mosquitto/log
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq_broker
+    restart: always
+    ports:
+      - "5672:5672"   # Porta AMQP
+      - "15672:15672" # Painel Web (Acesse via localhost:15672 - admin/admin)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   edge-gateway:
     build:
       context: .
@@ -22,10 +32,12 @@ services:
     restart: always
     environment:
       - BROKER_IP=mosquitto
+      - RABBITMQ_HOST=rabbitmq
     ports:
       - "5683:5683/udp"
     depends_on:
       - mosquitto
+      - rabbitmq
     volumes:
       - ./logs:/app/logs
 
@@ -59,6 +71,57 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  ms-digital-twins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ms-digital-twins
+    container_name: ms_digital_twins
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8081:8081"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./logs:/app/logs
+
+  ms-laboratorio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ms-laboratorio
+    container_name: ms_laboratorio
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8083:8083"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./logs:/app/logs
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-gateway
+    container_name: api_gateway
+    restart: always
+    environment:
+      # Passa o nome interno dos contentores usando o DNS do Docker Compose
+      - TWINS_URL=http://ms-digital-twins:8081
+      - LAB_URL=http://ms-laboratorio:8083
+    ports:
+      - "8080:8080" # Única porta oficial do sistema aberta para o exterior
+    depends_on:
+      - ms-digital-twins
+      - ms-laboratorio
+    volumes:
+      - ./logs:/app/logs
 
 volumes:
   mosquitto_data:
+  rabbitmq_data:
