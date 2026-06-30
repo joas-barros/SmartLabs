@@ -31,8 +31,8 @@ services:
     container_name: edge_gateway
     restart: always
     environment:
-      - BROKER_IP=mosquitto
-      - RABBITMQ_HOST=rabbitmq
+      - BROKER_IP=10.211.243.112
+      - RABBITMQ_HOST=10.211.243.112
     ports:
       - "5683:5683/udp"
     volumes:
@@ -47,7 +47,7 @@ services:
     command: ["Lab1Mqtt"]
     restart: always
     environment:
-      - BROKER_IP=mosquitto
+      - BROKER_IP=10.211.243.112
     volumes:
       - ./logs:/app/logs
 
@@ -60,7 +60,7 @@ services:
     command: ["Lab2Coap"]
     restart: always
     environment:
-      - GATEWAY_IP=edge-gateway
+      - GATEWAY_IP=10.211.243.112
     volumes:
       - ./logs:/app/logs
 
@@ -72,7 +72,7 @@ services:
     container_name: ms_digital_twins
     restart: always
     environment:
-      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_HOST=10.211.243.112
     ports:
       - "8081:8081"
     volumes:
@@ -86,7 +86,7 @@ services:
     container_name: ms_laboratorio
     restart: always
     environment:
-      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_HOST=10.211.243.112
     ports:
       - "8083:8083"
     volumes:
